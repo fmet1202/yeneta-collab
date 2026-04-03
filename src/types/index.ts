@@ -5,7 +5,7 @@ export interface Message {
   timestamp: number;
   type: "text" | "image" | "document" | "quiz";
   fileName?: string;
-  imageUrl?: string;
+  isStreaming?: boolean;
 }
 
 export interface QuizQuestion {
@@ -28,29 +28,8 @@ export interface UserProfile {
 }
 
 export type Language = "amharic" | "english";
-
+export type VoiceGender = "female" | "male";
 export type DocumentAction = "explain" | "summarize" | "quiz";
-
-export interface ChatRequest {
-  message: string;
-  language: Language;
-  history: Message[];
-}
-
-export interface DocumentRequest {
-  language: Language;
-  action: DocumentAction;
-}
-
-export interface ApiResponse {
-  response?: string;
-  reply?: string;
-  explanation?: string;
-  quiz?: Quiz;
-  error?: string;
-}
-
-export type VoiceGender = "male" | "female";
 
 export interface ChatSession {
   id: string;
@@ -59,4 +38,18 @@ export interface ChatSession {
   language: Language;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface ChatRequest {
+  message: string;
+  language: Language;
+  history: Message[];
+}
+
+export interface ApiResponse {
+  response?: string;
+  reply?: string;
+  explanation?: string;
+  quiz?: Quiz;
+  error?: string;
 }
