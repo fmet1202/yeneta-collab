@@ -1,17 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ChatWindow from "@/components/ChatWindow";
 import ChatInput from "@/components/ChatInput";
 import { Message, Language, DocumentAction, ApiResponse } from "@/types";
+import { Loader2 } from "lucide-react";
 
 export default function ChatPage() {
+  const { status } = useSession();
+  const router = useRouter();
+
   const [language, setLanguage] = useState<Language>("amharic");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [isProcessingDoc, setIsProcessingDoc] = useState(false);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 text-[#1a7a4c]">
+        <Loader2 size={40} className="animate-spin mb-4" />
+        <p className="font-bold animate-pulse">Loading Yeneta...</p>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") return null;
 
   const addMessage = (msg: Omit<Message, "id" | "timestamp">) => {
     const newMessage: Message = {
@@ -34,27 +57,33 @@ export default function ChatPage() {
       });
 
       const data: ApiResponse = await res.json();
-      
+
       if (data.error) throw new Error(data.error);
 
       addMessage({
         role: "assistant",
         content: data.reply || "I couldn't process that.",
-        type: "text"
+        type: "text",
       });
     } catch (error) {
       console.error(error);
       addMessage({
         role: "assistant",
-        content: language === "amharic" ? "ይቅርታ, ስህተት ተፈጥሯል።" : "Sorry, an error occurred.",
-        type: "text"
+        content:
+          language === "amharic"
+            ? "ይቅርታ, ስህተት ተፈጥሯል።"
+            : "Sorry, an error occurred.",
+        type: "text",
       });
     } finally {
       setIsTyping(false);
     }
   };
 
-  const handleProcessDocument = async (file: File, action: DocumentAction) => {
+  const handleProcessDocument = async (
+    file: File,
+    action: DocumentAction
+  ) => {
     setIsProcessingDoc(true);
     setShowUpload(false);
 
@@ -97,21 +126,24 @@ export default function ChatPage() {
         addMessage({
           role: "assistant",
           content: JSON.stringify(data.quiz),
-          type: "quiz"
+          type: "quiz",
         });
       } else {
         addMessage({
           role: "assistant",
           content: data.explanation || data.response || "Done.",
-          type: "text"
+          type: "text",
         });
       }
     } catch (error) {
       console.error(error);
       addMessage({
         role: "assistant",
-        content: language === "amharic" ? "ፋይሉን ማንበብ አልተቻለም።" : "Failed to process the file.",
-        type: "text"
+        content:
+          language === "amharic"
+            ? "ፋይሉን ማንበብ አልተቻለም።"
+            : "Failed to process the file.",
+        type: "text",
       });
     } finally {
       setIsProcessingDoc(false);
@@ -122,7 +154,7 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
       <Navbar language={language} setLanguage={setLanguage} />
-      
+
       <ChatWindow
         messages={messages}
         language={language}
