@@ -9,7 +9,7 @@ import ChatInput from "@/components/ChatInput";
 import Sidebar from "@/components/Sidebar";
 import { Message, Language, DocumentAction, ApiResponse } from "@/types";
 import { Loader2 } from "lucide-react";
-import { getAllSessions, getSession, saveSession, createNewSession, deleteSession } from "@/lib/storage";
+import { getAllSessions, getSession, saveSession, createNewSession, deleteSession, moveSessionToFolder } from "@/lib/storage";
 
 export default function ChatPage() {
   const { status } = useSession();
@@ -99,6 +99,11 @@ export default function ChatPage() {
       if (updated.length > 0) handleLoadSession(updated[0].id);
       else handleNewSession();
     }
+  };
+
+  const handleMoveToFolder = (id: string, folderName: string) => {
+    moveSessionToFolder(id, folderName);
+    setSessionsList(getAllSessions());
   };
 
   const stopGeneration = () => {
@@ -226,9 +231,13 @@ export default function ChatPage() {
       <div className={`${isSidebarOpen ? "w-64 translate-x-0" : "w-0 -translate-x-full"} transition-all duration-300 ease-in-out shrink-0 bg-[#1a1a2e] absolute md:relative z-40 h-full`}>
         <div className="w-64 h-full">
           <Sidebar 
-            sessions={sessionsList} currentSessionId={currentSessionId}
-            onSelect={handleLoadSession} onNew={handleNewSession} onDelete={handleDeleteSession}
-            language={language} isOpen={true} setIsOpen={setIsSidebarOpen} 
+            sessions={sessionsList} 
+            currentSessionId={currentSessionId}
+            onSelect={handleLoadSession} 
+            onNew={handleNewSession} 
+            onDelete={handleDeleteSession}
+            onMoveToFolder={handleMoveToFolder}
+            language={language}
           />
         </div>
       </div>
