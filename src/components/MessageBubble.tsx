@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Message, Language } from "@/types";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
@@ -8,20 +7,16 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import SpeakButton from "./SpeakButton";
 import QuizCard from "./QuizCard";
-import { FileText, Image as ImageIcon, Copy, Check, RefreshCw, Edit2, Download } from "lucide-react";
-
-interface ExtendedMessage extends Message {
-  isStreaming?: boolean;
-}
+import { FileText, Image as ImageIcon, Copy, Check, Edit2, Download, RefreshCw } from "lucide-react";
+import { useState } from "react";
 
 interface Props {
-  message: ExtendedMessage;
+  message: Message;
   language: Language;
-  onRetry?: (messageId: string) => void;
-  onEdit?: (messageId: string, newText: string) => void;
+  onEdit?: (id: string, newText: string) => void;
+  onRetry?: (id: string) => void;
 }
 
-// Sub-component to handle individual code block copy states
 const CodeBlock = ({ match, codeString, children, className, ...props }: any) => {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
@@ -30,10 +25,10 @@ const CodeBlock = ({ match, codeString, children, className, ...props }: any) =>
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div className="relative bg-[#1e1e2e] rounded-lg my-4 overflow-hidden shadow-lg">
+    <div className="relative bg-[#1e1e2e] rounded-lg my-4 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2 bg-[#2d2d3b] text-xs text-gray-300">
         <span>{match[1]}</span>
-        <button onClick={handleCopy} className="hover:text-white flex items-center gap-1 transition-colors">
+        <button onClick={handleCopy} className="hover:text-white flex items-center gap-1">
           {copied ? <><Check size={14} className="text-green-500"/> Copied</> : <><Copy size={14}/> Copy</>}
         </button>
       </div>
@@ -44,23 +39,22 @@ const CodeBlock = ({ match, codeString, children, className, ...props }: any) =>
   );
 };
 
-export default function MessageBubble({ message, language, onRetry, onEdit }: Props) {
+export default function MessageBubble({ message, language, onEdit, onRetry }: Props) {
   const isUser = message.role === "user";
   const [copiedText, setCopiedText] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.content);
 
+  if (message.type === "quiz") {
+    let quizData;
+    try { quizData = JSON.parse(message.content); } catch { return null; }
+    return <div className="flex w-full justify-start my-4"><QuizCard quiz={quizData} language={language} /></div>;
+  }
+
   const handleCopyText = () => {
     navigator.clipboard.writeText(message.content);
     setCopiedText(true);
     setTimeout(() => setCopiedText(false), 2000);
-  };
-
-  const submitEdit = () => {
-    if (onEdit && editText.trim() !== message.content) {
-      onEdit(message.id, editText.trim());
-    }
-    setIsEditing(false);
   };
 
   const handleDownloadPDF = () => {
@@ -88,15 +82,16 @@ export default function MessageBubble({ message, language, onRetry, onEdit }: Pr
     }
   };
 
-  if (message.type === "quiz") {
-    let quizData;
-    try { quizData = JSON.parse(message.content); } catch { return null; }
-    return <div className="flex w-full justify-start my-4"><QuizCard quiz={quizData} language={language} /></div>;
-  }
+  const submitEdit = () => {
+    if (onEdit && editText.trim() !== message.content) {
+      onEdit(message.id, editText.trim());
+    }
+    setIsEditing(false);
+  };
 
   return (
-    <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"} my-4 group`}>
-      <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-4 shadow-sm relative ${
+    <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"} my-4`}>
+      <div className={`group max-w-[85%] md:max-w-[75%] rounded-2xl p-4 shadow-sm ${
           isUser ? "bg-[#1a7a4c] text-white rounded-br-none" : "bg-white border border-gray-100 text-[#1a1a2e] rounded-bl-none"
         } ${message.isStreaming ? "animate-pulse" : ""}`}
       >
@@ -115,9 +110,9 @@ export default function MessageBubble({ message, language, onRetry, onEdit }: Pr
               onChange={(e) => setEditText(e.target.value)}
               rows={3}
             />
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setIsEditing(false)} className="text-xs px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors">Cancel</button>
-              <button onClick={submitEdit} className="text-xs px-3 py-1.5 rounded-lg bg-white text-[#1a7a4c] font-bold hover:bg-gray-100 transition-colors">Save & Resend</button>
+            <div className="flex gap-2 justify-end mt-1">
+              <button onClick={() => setIsEditing(false)} className="text-xs px-3 py-1.5 rounded bg-white/20 hover:bg-white/30 transition">Cancel</button>
+              <button onClick={submitEdit} className="text-xs px-3 py-1.5 rounded bg-white text-[#1a7a4c] font-bold hover:bg-gray-100 transition">Save & Submit</button>
             </div>
           </div>
         ) : (
@@ -132,7 +127,7 @@ export default function MessageBubble({ message, language, onRetry, onEdit }: Pr
                   if (!inline && match) {
                     return <CodeBlock match={match} codeString={codeString} className={className} {...props}>{children}</CodeBlock>;
                   }
-                  return <code className="bg-black/10 text-[#e63946] rounded px-1.5 py-0.5 font-mono text-sm" {...props}>{children}</code>;
+                  return <code className={`${isUser ? "bg-black/20 text-white" : "bg-black/5 text-[#e63946]"} rounded px-1 py-0.5 font-mono text-sm`} {...props}>{children}</code>;
                 },
               }}
             >
@@ -141,28 +136,35 @@ export default function MessageBubble({ message, language, onRetry, onEdit }: Pr
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className={`absolute ${isUser ? "-left-10" : "-right-16"} top-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1`}>
+        <div className={`flex items-center gap-4 mt-3 pt-2 ${isUser ? "justify-end border-t border-white/20 text-white/80" : "justify-start border-t border-gray-100 text-gray-500"} opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity`}>
+          
           {isUser && !isEditing && (
-            <button onClick={() => setIsEditing(true)} className="p-1.5 text-gray-400 hover:text-[#1a7a4c] bg-white rounded-full shadow border border-gray-100"><Edit2 size={14}/></button>
+            <>
+              <button onClick={() => setIsEditing(true)} className="hover:text-white flex items-center gap-1 text-[11px] font-medium" title="Edit Message"><Edit2 size={14}/> Edit</button>
+              <button onClick={handleCopyText} className="hover:text-white flex items-center gap-1 text-[11px] font-medium" title="Copy Text">
+                {copiedText ? <Check size={14} className="text-green-300" /> : <Copy size={14} />} {copiedText ? "Copied" : "Copy"}
+              </button>
+            </>
           )}
+          
           {!isUser && !message.isStreaming && (
             <>
-              <button onClick={handleDownloadPDF} className="p-1.5 text-gray-400 hover:text-[#1a7a4c] bg-white rounded-full shadow border border-gray-100" title="Download as PDF">
-                <Download size={14} />
-              </button>
-              <button onClick={handleCopyText} className="p-1.5 text-gray-400 hover:text-[#1a7a4c] bg-white rounded-full shadow border border-gray-100" title="Copy Message">
-                {copiedText ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-              </button>
               <SpeakButton text={message.content} language={language} />
+              <button onClick={handleCopyText} className="hover:text-[#1a7a4c] flex items-center gap-1 text-[11px] font-medium transition-colors">
+                {copiedText ? <Check size={14} className="text-green-500" /> : <Copy size={14} />} {copiedText ? "Copied" : "Copy"}
+              </button>
+              <button onClick={handleDownloadPDF} className="hover:text-[#1a7a4c] flex items-center gap-1 text-[11px] font-medium transition-colors">
+                <Download size={14}/> PDF
+              </button>
               {onRetry && (
-                <button onClick={() => onRetry(message.id)} className="p-1.5 text-gray-400 hover:text-[#f0a500] bg-white rounded-full shadow border border-gray-100" title="Retry">
-                  <RefreshCw size={14} />
+                <button onClick={() => onRetry(message.id)} className="hover:text-[#1a7a4c] flex items-center gap-1 text-[11px] font-medium transition-colors">
+                  <RefreshCw size={14}/> Retry
                 </button>
               )}
             </>
           )}
         </div>
+
       </div>
     </div>
   );
