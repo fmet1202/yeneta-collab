@@ -38,12 +38,14 @@ export interface ChatSession {
   language: Language;
   createdAt: number;
   updatedAt: number;
+  folder?: string;
 }
 
 export interface ChatRequest {
   message: string;
   language: Language;
   history: Message[];
+  userGender?: "male" | "female";
 }
 
 export interface ApiResponse {
