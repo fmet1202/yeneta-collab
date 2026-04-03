@@ -73,3 +73,35 @@ export const moveSessionToFolder = (id: string, folderName: string): void => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
   }
 };
+
+const FOLDER_KEY = "yeneta_folders";
+
+export const getFolders = (): string[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(FOLDER_KEY) || "[]");
+  } catch {
+    return [];
+  }
+};
+
+export const addFolder = (name: string): void => {
+  if (typeof window === "undefined" || !name.trim()) return;
+  const folders = getFolders();
+  if (!folders.includes(name.trim())) {
+    folders.push(name.trim());
+    localStorage.setItem(FOLDER_KEY, JSON.stringify(folders));
+  }
+};
+
+export const deleteFolder = (name: string): void => {
+  if (typeof window === "undefined") return;
+  const folders = getFolders().filter((f) => f !== name);
+  localStorage.setItem(FOLDER_KEY, JSON.stringify(folders));
+
+  const sessions = getAllSessions();
+  sessions.forEach((s) => {
+    if (s.folder === name) s.folder = undefined;
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+};
