@@ -25,12 +25,32 @@ export const speakText = (
 
   window.speechSynthesis.cancel();
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = language === "amharic" ? "am-ET" : "en-US";
-  utterance.rate = 0.9;
-  utterance.pitch = 1;
+  const speak = () => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    const langCode = language === "amharic" ? "am-ET" : "en-US";
+    utterance.lang = langCode;
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
 
-  window.speechSynthesis.speak(utterance);
+    // Try to find a matching voice
+    const voices = window.speechSynthesis.getVoices();
+    const match = voices.find((v) => v.lang.startsWith(language === "amharic" ? "am" : "en"));
+    if (match) {
+      utterance.voice = match;
+    }
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Voices might not be loaded yet
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    speak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = () => {
+      speak();
+    };
+  }
 };
 
 export const stopSpeaking = (): void => {
