@@ -122,7 +122,7 @@ export default function MessageBubble({ message, language, onEdit, onRetry }: Pr
             </div>
           </div>
         ) : (
-          <div className={`markdown-body ${isUser ? "prose-invert" : ""}`}>
+          <div className={`markdown-body ${isUser ? "user-markdown" : ""}`}>
             <ReactMarkdown
               remarkPlugins={[remarkMath]}
               rehypePlugins={[rehypeKatex]}
