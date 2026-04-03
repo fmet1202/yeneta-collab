@@ -40,112 +40,85 @@ body {
 .typing-dot:nth-child(1) { animation-delay: -0.32s; }
 .typing-dot:nth-child(2) { animation-delay: -0.16s; }
 
-/* =========================================
-   RICH MARKDOWN STYLING (Grok/ChatGPT style)
-   ========================================= */
 .markdown-body {
   font-size: 0.95rem;
   line-height: 1.7;
-}
-
-.markdown-body h1 {
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
-  color: var(--color-primary);
-  border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 0.5rem;
-}
-
-.markdown-body h2 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
   color: var(--color-dark);
 }
 
-.markdown-body h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-top: 1.25rem;
-  margin-bottom: 0.5rem;
+.markdown-body h1, 
+.markdown-body h2, 
+.markdown-body h3, 
+.markdown-body h4 {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  margin-top: 1.5em !important;
+  margin-bottom: 0.75em !important;
+  line-height: 1.3 !important;
 }
 
-.markdown-body p {
-  margin-bottom: 1rem;
+.markdown-body h1 { 
+  font-size: 1.5rem !important; 
+  border-bottom: 2px solid #e2e8f0 !important; 
+  padding-bottom: 0.3em !important; 
+}
+.markdown-body h2 { 
+  font-size: 1.25rem !important; 
+  border-bottom: 1px solid #e2e8f0 !important; 
+  padding-bottom: 0.3em !important; 
+}
+.markdown-body h3 { font-size: 1.125rem !important; }
+
+.markdown-body p { 
+  margin-top: 0 !important; 
+  margin-bottom: 1em !important; 
 }
 
-.markdown-body ul {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-  margin-bottom: 1rem;
+.markdown-body ul { 
+  list-style-type: disc !important; 
+  padding-left: 1.5em !important; 
+  margin-bottom: 1em !important; 
 }
 
-.markdown-body ol {
-  list-style-type: decimal;
-  padding-left: 1.5rem;
-  margin-bottom: 1rem;
+.markdown-body ol { 
+  list-style-type: decimal !important; 
+  padding-left: 1.5em !important; 
+  margin-bottom: 1em !important; 
 }
 
-.markdown-body li {
-  margin-bottom: 0.25rem;
-}
-
-.markdown-body li > p {
-  margin-bottom: 0;
+.markdown-body li { 
+  margin-bottom: 0.5em !important; 
 }
 
 .markdown-body strong {
-  font-weight: 700;
-  color: var(--color-dark);
-}
-
-/* User bubble overrides to keep white text visible */
-.prose-invert.markdown-body h1,
-.prose-invert.markdown-body h2,
-.prose-invert.markdown-body h3,
-.prose-invert.markdown-body strong {
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
+  font-weight: 700 !important;
+  color: #000000 !important;
 }
 
 .markdown-body blockquote {
-  border-left: 4px solid var(--color-secondary);
-  background-color: rgba(240, 165, 0, 0.1);
-  padding: 0.75rem 1rem;
-  margin: 1.25rem 0;
-  border-radius: 0 0.5rem 0.5rem 0;
-  font-style: italic;
-  color: #475569;
+  margin: 1.25em 0 !important;
+  padding: 0.75em 1em !important;
+  color: #475569 !important;
+  border-left: 4px solid var(--color-secondary) !important;
+  background: rgba(240, 165, 0, 0.1) !important;
+  border-radius: 0 0.5rem 0.5rem 0 !important;
+  font-style: italic !important;
 }
 
-.prose-invert.markdown-body blockquote {
-  color: #e2e8f0;
+.user-markdown,
+.user-markdown h1, 
+.user-markdown h2, 
+.user-markdown h3, 
+.user-markdown h4, 
+.user-markdown p, 
+.user-markdown li,
+.user-markdown strong {
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.2) !important;
 }
 
-.markdown-body table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 1.25rem;
-}
-
-.markdown-body th, .markdown-body td {
-  border: 1px solid #e2e8f0;
-  padding: 0.5rem 0.75rem;
-  text-align: left;
-}
-
-.markdown-body th {
-  background-color: #f8fafc;
-  font-weight: 600;
-}
-
-.prose-invert.markdown-body th, 
-.prose-invert.markdown-body td {
-  border-color: rgba(255, 255, 255, 0.2);
-}
-.prose-invert.markdown-body th {
-  background-color: rgba(0, 0, 0, 0.2);
+.user-markdown blockquote {
+  color: #f1f5f9 !important;
+  border-left-color: rgba(255,255,255,0.5) !important;
+  background: rgba(0,0,0,0.15) !important;
 }
