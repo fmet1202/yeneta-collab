@@ -1,5 +1,6 @@
 let currentAudio: HTMLAudioElement | null = null;
 let ttsAbortController: AbortController | null = null;
+let currentPlayToken = 0;
 
 interface SpeechRecognitionEvent extends Event {
   results: { [index: number]: { [index: number]: { transcript: string } } };
@@ -16,6 +17,8 @@ export const speakText = async (
   
   const abortCtrl = new AbortController();
   ttsAbortController = abortCtrl;
+  
+  const token = ++currentPlayToken;
 
   try {
     const res = await fetch("/api/tts", {
@@ -26,10 +29,10 @@ export const speakText = async (
     });
 
     if (!res.ok) throw new Error("TTS failed");
+    if (token !== currentPlayToken) return;
 
     const audioBlob = await res.blob();
-    
-    if (abortCtrl.signal.aborted) return;
+    if (token !== currentPlayToken) return;
 
     const audioUrl = URL.createObjectURL(audioBlob);
     const audio = new Audio(audioUrl);
@@ -40,7 +43,7 @@ export const speakText = async (
       if (currentAudio === audio) currentAudio = null;
     };
 
-    if (abortCtrl.signal.aborted) return;
+    if (token !== currentPlayToken) return;
     await audio.play();
 
   } catch (error: any) {
@@ -49,6 +52,8 @@ export const speakText = async (
 };
 
 export const stopSpeaking = (): void => {
+  currentPlayToken++;
+  
   if (ttsAbortController) {
     ttsAbortController.abort();
     ttsAbortController = null;
