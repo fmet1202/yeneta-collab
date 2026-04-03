@@ -26,7 +26,7 @@ export default function Navbar({ language, setLanguage, onMenuClick }: Props) {
     <nav className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between sticky top-0 z-40">
       <div className="flex items-center gap-3">
         {onMenuClick && (
-          <button onClick={onMenuClick} className="md:hidden p-1 text-gray-600 hover:bg-gray-100 rounded-lg">
+          <button onClick={onMenuClick} className="p-2 text-gray-600 hover:bg-gray-100 hover:text-[#1a7a4c] rounded-lg transition-colors">
             <Menu size={24} />
           </button>
         )}
