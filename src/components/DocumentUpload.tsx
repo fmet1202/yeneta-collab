@@ -37,7 +37,7 @@ export default function DocumentUpload({ language, onClose, onProcess, isProcess
   });
 
   return (
-    <div className="absolute bottom-full mb-4 left-4 right-4 bg-white rounded-2xl shadow-xl border border-gray-200 p-6 z-30 animate-in fade-in slide-in-from-bottom-4">
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold text-lg text-[#1a1a2e]">
           {isAmharic ? "ማጥኛ ቁሳቁስ ስቀል" : "Upload Study Material"}
