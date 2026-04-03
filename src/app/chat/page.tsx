@@ -31,6 +31,7 @@ export default function ChatPage() {
   const [foldersList, setFoldersList] = useState<string[]>([]);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isHydratingRef = useRef(true);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/"); }, [status, router]);
 
@@ -50,28 +51,43 @@ export default function ChatPage() {
     if (status === "authenticated") {
       const all = getAllSessions();
       setSessionsList(all);
-      
-      if (typeof getFolders === "function") setFoldersList(getFolders()); 
-      
-      if (all.length > 0) handleLoadSession(all[0].id);
-      else handleNewSession();
+
+      if (typeof getFolders === "function") setFoldersList(getFolders());
+
+      if (all.length > 0) {
+        const session = all[0];
+        setCurrentSessionId(session.id);
+        setMessages(session.messages);
+        setLanguage(session.language || "amharic");
+      } else {
+        const newSession = createNewSession(language);
+        saveSession(newSession);
+        setCurrentSessionId(newSession.id);
+        setMessages([]);
+        setSessionsList(getAllSessions());
+      }
+
+      isHydratingRef.current = false;
     }
   }, [status]);
 
   useEffect(() => {
-    if (currentSessionId && messages.length > 0) {
-      const existingSession = getSession(currentSessionId);
-      saveSession({
-        id: currentSessionId,
-        messages,
-        language,
-        createdAt: existingSession?.createdAt || Date.now(),
-        updatedAt: Date.now(),
-        title: existingSession?.title || "New Chat",
-        folder: existingSession?.folder
-      });
-      setSessionsList(getAllSessions());
-    }
+    if (isHydratingRef.current) return;
+    if (!currentSessionId) return;
+
+    const existingSession = getSession(currentSessionId);
+
+    saveSession({
+      id: currentSessionId,
+      messages,
+      language,
+      createdAt: existingSession?.createdAt || Date.now(),
+      updatedAt: Date.now(),
+      title: existingSession?.title || "New Chat",
+      folder: existingSession?.folder,
+    });
+
+    setSessionsList(getAllSessions());
   }, [messages, currentSessionId, language]);
 
   if (status === "loading" || status === "unauthenticated") return null;
@@ -98,9 +114,16 @@ export default function ChatPage() {
   const handleLoadSession = (id: string) => {
     const session = getSession(id);
     if (session) {
+      isHydratingRef.current = true;
       setCurrentSessionId(id);
       setMessages(session.messages);
+      setLanguage(session.language || "amharic");
+
       if (window.innerWidth < 768) setIsSidebarOpen(false);
+
+      setTimeout(() => {
+        isHydratingRef.current = false;
+      }, 0);
     }
   };
 
@@ -155,7 +178,18 @@ export default function ChatPage() {
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text, timestamp: Date.now(), type: "text" };
     const assistantId = (Date.now() + 1).toString();
     
-    setMessages([...historyToUse, userMsg, { id: assistantId, role: "assistant", content: "", timestamp: Date.now(), type: "text", isStreaming: true } as any]);
+    setMessages(() => [
+      ...historyToUse,
+      userMsg,
+      {
+        id: assistantId,
+        role: "assistant",
+        content: "",
+        timestamp: Date.now(),
+        type: "text",
+        isStreaming: true,
+      } as any,
+    ]);
     setIsTyping(true);
 
     abortControllerRef.current = new AbortController();
