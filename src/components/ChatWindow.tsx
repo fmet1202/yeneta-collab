@@ -14,25 +14,15 @@ interface Props {
   onProcessDocument: (file: File, action: DocumentAction) => void;
   isUploading: boolean;
   onRetry: (messageId: string) => void;
+  onEditMessage: (messageId: string, newText: string) => void;
 }
 
-export default function ChatWindow({ 
-  messages, 
-  language, 
-  isTyping, 
-  showUpload, 
-  setShowUpload,
-  onProcessDocument,
-  isUploading,
-  onRetry
-}: Props) {
+export default function ChatWindow({ messages, language, isTyping, showUpload, setShowUpload, onProcessDocument, isUploading, onRetry, onEditMessage }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping, showUpload]);
-
-  const isAmharic = language === "amharic";
 
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-8 relative bg-slate-50">
@@ -42,20 +32,17 @@ export default function ChatWindow({
             <span className="text-4xl">🎓</span>
           </div>
           <h2 className="text-xl font-bold text-[#1a1a2e]">
-            {isAmharic ? "ሰላም! እኔ የኔታ ነኝ።" : "Hello! I am Yeneta."}
+            {language === "amharic" ? "ሰላም! እኔ የኔታ ነኝ።" : "Hello! I am Yeneta."}
           </h2>
           <p className="max-w-sm">
-            {isAmharic 
-              ? "ምን ላግዝዎት? ጥያቄ ይጠይቁኝ ወይም ማጥኛ ፋይሎችን ይስቀሉ።" 
-              : "How can I help you? Ask a question or upload study materials."}
+            {language === "amharic" ? "ምን ላግዝዎት? ጥያቄ ይጠይቁኝ ወይም ማጥኛ ፋይሎችን ይስቀሉ።" : "How can I help you? Ask a question or upload study materials."}
           </p>
         </div>
       ) : (
         <div className="max-w-3xl mx-auto flex flex-col w-full pb-6">
           {messages.map((msg) => (
-            <MessageBubble key={msg.id} message={msg} language={language} onRetry={onRetry} />
+            <MessageBubble key={msg.id} message={msg} language={language} onRetry={onRetry} onEdit={onEditMessage} />
           ))}
-
           {isTyping && (
             <div className="flex justify-start my-3">
               <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-none p-4 shadow-sm flex gap-1">
