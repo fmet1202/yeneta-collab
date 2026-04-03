@@ -9,7 +9,8 @@ import ChatInput from "@/components/ChatInput";
 import Sidebar from "@/components/Sidebar";
 import { Message, Language, DocumentAction, ApiResponse } from "@/types";
 import { Loader2 } from "lucide-react";
-import { getAllSessions, getSession, saveSession, createNewSession, deleteSession, moveSessionToFolder } from "@/lib/storage";
+
+import { getAllSessions, getSession, saveSession, createNewSession, deleteSession, getFolders, addFolder, deleteFolder } from "@/lib/storage";
 
 export default function ChatPage() {
   const { status } = useSession();
@@ -21,21 +22,18 @@ export default function ChatPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [isProcessingDoc, setIsProcessingDoc] = useState(false);
 
-  // Layout & Settings States
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default open on desktop
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [userGender, setUserGender] = useState<"male"|"female"|null>(null);
   const [showGenderModal, setShowGenderModal] = useState(false);
 
-  // Session States
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
   const [sessionsList, setSessionsList] = useState<any[]>([]);
+  const [foldersList, setFoldersList] = useState<string[]>([]);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Auth Protection
   useEffect(() => { if (status === "unauthenticated") router.push("/"); }, [status, router]);
 
-  // Load Gender preference
   useEffect(() => {
     const savedGender = localStorage.getItem("yeneta_gender") as "male"|"female"|null;
     if (savedGender) setUserGender(savedGender);
@@ -48,11 +46,13 @@ export default function ChatPage() {
     setShowGenderModal(false);
   };
 
-  // Load Chat Sessions
   useEffect(() => {
     if (status === "authenticated") {
       const all = getAllSessions();
       setSessionsList(all);
+      
+      if (typeof getFolders === "function") setFoldersList(getFolders()); 
+      
       if (all.length > 0) handleLoadSession(all[0].id);
       else handleNewSession();
     }
@@ -64,7 +64,7 @@ export default function ChatPage() {
       saveSession({
         id: currentSessionId,
         messages,
-        language,
+        language: existingSession?.language || language,
         createdAt: existingSession?.createdAt || Date.now(),
         updatedAt: Date.now(),
         title: existingSession?.title || "New Chat"
@@ -75,12 +75,23 @@ export default function ChatPage() {
 
   if (status === "loading" || status === "unauthenticated") return null;
 
-  // Session Handlers
-  const handleNewSession = () => {
-    const newSession = createNewSession(language);
-    setCurrentSessionId(newSession.id);
+  const handleNewSession = (folderName?: string) => {
+    try {
+      // @ts-ignore
+      const newSession = createNewSession(language);
+      if (folderName) newSession.folder = folderName;
+      
+      // @ts-ignore
+      saveSession(newSession);
+      setCurrentSessionId(newSession.id);
+    } catch (e) {
+      const id = Date.now().toString();
+      setCurrentSessionId(id);
+    }
+
     setMessages([]);
     setSessionsList(getAllSessions());
+    if (window.innerWidth < 768) setIsSidebarOpen(false);
   };
 
   const handleLoadSession = (id: string) => {
@@ -88,6 +99,7 @@ export default function ChatPage() {
     if (session) {
       setCurrentSessionId(id);
       setMessages(session.messages);
+      if (window.innerWidth < 768) setIsSidebarOpen(false);
     }
   };
 
@@ -101,9 +113,19 @@ export default function ChatPage() {
     }
   };
 
-  const handleMoveToFolder = (id: string, folderName: string) => {
-    moveSessionToFolder(id, folderName);
-    setSessionsList(getAllSessions());
+  const handleCreateFolder = (name: string) => {
+    if (typeof addFolder === "function") {
+      addFolder(name);
+      setFoldersList(getFolders());
+    }
+  };
+
+  const handleDeleteFolder = (name: string) => {
+    if (typeof deleteFolder === "function") {
+      deleteFolder(name);
+      setFoldersList(getFolders());
+      setSessionsList(getAllSessions());
+    }
   };
 
   const stopGeneration = () => {
@@ -141,7 +163,7 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, language, history: historyToUse, userGender }), // Sent user gender to API
+        body: JSON.stringify({ message: text, language, history: historyToUse, userGender }),
         signal: abortControllerRef.current.signal
       });
 
@@ -190,7 +212,7 @@ export default function ChatPage() {
       formData.append(isImage ? "image" : "document", file);
       formData.append("language", language);
       if (!isImage) formData.append("action", action);
-      formData.append("userGender", userGender || "female"); // Included in docs upload too
+      formData.append("userGender", userGender || "female");
 
       const res = await fetch(endpoint, { method: "POST", body: formData });
       const data: ApiResponse = await res.json();
@@ -212,7 +234,6 @@ export default function ChatPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-white relative font-noto">
       
-      {/* Gender Modal */}
       {showGenderModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl text-center animate-in fade-in zoom-in">
@@ -227,25 +248,28 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Sidebar - Desktop & Mobile */}
-      <div className={`${isSidebarOpen ? "w-64 translate-x-0" : "w-0 -translate-x-full"} transition-all duration-300 ease-in-out shrink-0 bg-[#1a1a2e] absolute md:relative z-40 h-full`}>
-        <div className="w-64 h-full">
-          <Sidebar 
+      <div 
+        className={`${isSidebarOpen ? "w-64" : "w-0"} transition-all duration-300 ease-in-out shrink-0 relative z-40 h-full overflow-hidden bg-[#1a1a2e] shadow-2xl md:shadow-none`}
+      >
+        <div className="w-64 h-full absolute inset-0">
+          <Sidebar
             sessions={sessionsList} 
+            folders={foldersList}
             currentSessionId={currentSessionId}
             onSelect={handleLoadSession} 
             onNew={handleNewSession} 
             onDelete={handleDeleteSession}
-            onMoveToFolder={handleMoveToFolder}
+            onCreateFolder={handleCreateFolder}
+            onDeleteFolder={handleDeleteFolder}
             language={language}
           />
         </div>
       </div>
-      
-      {/* Mobile overlay */}
-      {isSidebarOpen && <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
 
-      {/* Main Chat Area */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         <Navbar 
           language={language} 
