@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signIn, signOut } from "next-auth/react";
 import { Language } from "@/types";
 import LanguageToggle from "./LanguageToggle";
-import { GraduationCap, LogOut, Menu } from "lucide-react";
+import { GraduationCap, Menu } from "lucide-react";
 
 interface Props {
   language: Language;
@@ -13,14 +12,7 @@ interface Props {
 }
 
 export default function Navbar({ language, setLanguage, onMenuClick }: Props) {
-  const { data: session, status } = useSession();
   const isAmharic = language === "amharic";
-
-  const handleSignOut = () => {
-    if (window.confirm(isAmharic ? "በእርግጥ መውጣት ይፈልጋሉ?" : "Are you sure you want to sign out?")) {
-      signOut({ callbackUrl: "/" });
-    }
-  };
 
   return (
     <nav className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between sticky top-0 z-40">
@@ -43,28 +35,6 @@ export default function Navbar({ language, setLanguage, onMenuClick }: Props) {
 
       <div className="flex items-center gap-4">
         <LanguageToggle language={language} setLanguage={setLanguage} />
-        
-        <div className="h-6 w-px bg-gray-200"></div>
-
-        {status === "loading" ? (
-          <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
-        ) : session?.user ? (
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2">
-              <img src={session.user.image || ""} alt="Profile" className="w-8 h-8 rounded-full border border-gray-200" />
-              <span className="text-sm font-semibold text-gray-700 truncate max-w-[100px]">
-                {session.user.name?.split(" ")[0]}
-              </span>
-            </div>
-            <button onClick={handleSignOut} className="p-2 text-gray-400 hover:text-[#e63946] hover:bg-red-50 rounded-full transition-colors" title={isAmharic ? "ውጣ" : "Sign Out"}>
-              <LogOut size={18} />
-            </button>
-          </div>
-        ) : (
-          <button onClick={() => signIn("google")} className="text-sm font-semibold text-[#1a7a4c] hover:bg-green-50 px-4 py-2 rounded-full border border-[#1a7a4c] transition-colors">
-            {isAmharic ? "ግባ" : "Sign In"}
-          </button>
-        )}
       </div>
     </nav>
   );

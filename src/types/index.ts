@@ -6,6 +6,7 @@ export interface Message {
   type: "text" | "image" | "document" | "quiz";
   fileName?: string;
   isStreaming?: boolean;
+  isTranslating?: boolean;
 }
 
 export interface QuizQuestion {

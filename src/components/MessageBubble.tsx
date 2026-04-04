@@ -7,7 +7,7 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import SpeakButton from "./SpeakButton";
 import QuizCard from "./QuizCard";
-import { FileText, Image as ImageIcon, Copy, Check, Edit2, Download, RefreshCw } from "lucide-react";
+import { FileText, Image as ImageIcon, Copy, Check, Edit2, Download, RefreshCw, Languages } from "lucide-react";
 import { useState } from "react";
 
 interface ExtendedMessage extends Message {
@@ -19,6 +19,7 @@ interface Props {
   language: Language;
   onEdit?: (id: string, newText: string) => void;
   onRetry?: (id: string) => void;
+  onTranslate?: (id: string, text: string) => void;
 }
 
 const CodeBlock = ({ match, codeString, children, className, ...props }: any) => {
@@ -43,11 +44,22 @@ const CodeBlock = ({ match, codeString, children, className, ...props }: any) =>
   );
 };
 
-export default function MessageBubble({ message, language, onEdit, onRetry }: Props) {
+export default function MessageBubble({ message, language, onEdit, onRetry, onTranslate }: Props) {
   const isUser = message.role === "user";
   const [copiedText, setCopiedText] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.content);
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  const handleTranslate = async () => {
+    if (!onTranslate || !message.content) return;
+    setIsTranslating(true);
+    try {
+      await onTranslate(message.id, message.content);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   if (message.type === "quiz") {
     let quizData;
@@ -159,6 +171,10 @@ export default function MessageBubble({ message, language, onEdit, onRetry }: Pr
           {!isUser && !message.isStreaming && (
             <>
               <SpeakButton text={message.content} language={language} />
+              
+              <button onClick={handleTranslate} disabled={isTranslating} className="hover:text-[#1a7a4c] flex items-center gap-1 text-[11px] font-medium transition-colors disabled:opacity-50">
+                {isTranslating ? <RefreshCw size={14} className="animate-spin" /> : <Languages size={14}/>} {isTranslating ? (language === "amharic" ? "ትርጉም..." : "Translating...") : (language === "amharic" ? "ትርጉም" : "Translate")}
+              </button>
               
               <button onClick={handleCopyText} className="hover:text-[#1a7a4c] flex items-center gap-1 text-[11px] font-medium transition-colors">
                 {copiedText ? <Check size={14} className="text-green-500" /> : <Copy size={14} />} {copiedText ? "Copied" : "Copy"}

@@ -15,9 +15,10 @@ interface Props {
   isUploading: boolean;
   onRetry: (messageId: string) => void;
   onEditMessage: (messageId: string, newText: string) => void;
+  onTranslate?: (messageId: string, text: string) => void;
 }
 
-export default function ChatWindow({ messages, language, isTyping, showUpload, setShowUpload, onProcessDocument, isUploading, onRetry, onEditMessage }: Props) {
+export default function ChatWindow({ messages, language, isTyping, showUpload, setShowUpload, onProcessDocument, isUploading, onRetry, onEditMessage, onTranslate }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function ChatWindow({ messages, language, isTyping, showUpload, s
       ) : (
         <div className="max-w-3xl mx-auto flex flex-col w-full pb-6">
           {messages.map((msg) => (
-            <MessageBubble key={msg.id} message={msg} language={language} onRetry={onRetry} onEdit={onEditMessage} />
+            <MessageBubble key={msg.id} message={msg} language={language} onRetry={onRetry} onEdit={onEditMessage} onTranslate={onTranslate} />
           ))}
           {isTyping && (
             <div className="flex justify-start my-3">

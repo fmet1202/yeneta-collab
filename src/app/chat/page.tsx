@@ -33,6 +33,7 @@ export default function ChatPage() {
   const [isProcessingDoc, setIsProcessingDoc] = useState(false);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -172,6 +173,32 @@ export default function ChatPage() {
 
   const stopGeneration = () => {
     if (abortControllerRef.current) { abortControllerRef.current.abort(); setIsTyping(false); }
+  };
+
+  const handleTranslateMessage = async (messageId: string, text: string) => {
+    const amharicRegex = /[\u1200-\u137F]/;
+    const targetLanguage = amharicRegex.test(text) ? "english" : "amharic";
+    
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, targetLanguage }),
+      });
+      
+      const data = await res.json();
+      
+      if (data.translation) {
+        setMessages((prev) => 
+          prev.map((m) => m.id === messageId 
+            ? { ...m, content: m.content + "\n\n--- Translation ---\n" + data.translation } 
+            : m
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Translation failed:", error);
+    }
   };
 
   const handleEditMessage = (messageId: string, newText: string) => {
@@ -362,8 +389,8 @@ export default function ChatPage() {
         </div>
       )}
 
-      <div className={`${isSidebarOpen ? "w-64" : "w-0"} transition-all duration-300 ease-in-out shrink-0 relative z-40 h-full overflow-hidden bg-[#1a1a2e] shadow-2xl md:shadow-none`}>
-        <div className="w-64 h-full absolute inset-0">
+      <div className={`${isSidebarOpen ? (isSidebarCollapsed ? "w-16" : "w-64") : "w-0"} transition-all duration-300 ease-in-out shrink-0 relative z-40 h-full overflow-hidden bg-[#1a1a2e] shadow-2xl md:shadow-none`}>
+        <div className={`${isSidebarCollapsed ? "w-16" : "w-64"} h-full absolute inset-0`}>
           <Sidebar
             sessions={sessionsList}
             folders={foldersList}
@@ -375,6 +402,7 @@ export default function ChatPage() {
             onDeleteFolder={handleDeleteFolder}
             onMove={openMoveModal}
             language={language}
+            isCollapsed={isSidebarCollapsed}
           />
         </div>
       </div>
@@ -388,6 +416,7 @@ export default function ChatPage() {
           showUpload={showUpload} setShowUpload={setShowUpload} onProcessDocument={handleProcessDocument} isUploading={isProcessingDoc}
           onRetry={(id) => handleEditMessage(id, messages[messages.findIndex((m) => m.id === id) - 1]?.content || "")}
           onEditMessage={handleEditMessage}
+          onTranslate={handleTranslateMessage}
         />
         <ChatInput onSend={handleSendMessage} onToggleUpload={() => setShowUpload(!showUpload)} language={language} isLoading={isTyping || isProcessingDoc} onStopGeneration={stopGeneration} />
       </div>
