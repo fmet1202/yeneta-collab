@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Language } from "@/types";
 import LanguageToggle from "./LanguageToggle";
-import { GraduationCap, Menu } from "lucide-react";
+import { GraduationCap, Menu, Square } from "lucide-react";
+import { subscribeToTTS, stopSpeaking } from "@/lib/speech";
 
 interface Props {
   language: Language;
@@ -12,7 +14,12 @@ interface Props {
 }
 
 export default function Navbar({ language, setLanguage, onMenuClick }: Props) {
-  const isAmharic = language === "amharic";
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToTTS(setIsAudioPlaying);
+    return () => { unsubscribe(); };
+  }, []);
 
   return (
     <nav className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between sticky top-0 z-40">
@@ -34,6 +41,16 @@ export default function Navbar({ language, setLanguage, onMenuClick }: Props) {
       </div>
 
       <div className="flex items-center gap-4">
+        
+        {isAudioPlaying && (
+          <button 
+            onClick={stopSpeaking} 
+            className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-[#e63946] border border-red-200 rounded-full hover:bg-red-200 transition-colors animate-pulse text-xs font-bold"
+          >
+            <Square size={12} fill="currentColor" /> Stop Audio
+          </button>
+        )}
+
         <LanguageToggle language={language} setLanguage={setLanguage} />
       </div>
     </nav>
