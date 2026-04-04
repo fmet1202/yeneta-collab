@@ -30,8 +30,8 @@ export interface UserProfile {
 
 export interface UserProfileData {
   gender: "male" | "female";
-  role: "student" | "teacher" | "other";
-  level: "primary" | "high_school" | "university" | "other";
+  role: string;
+  level: string;
 }
 
 export type Language = "amharic" | "english";
