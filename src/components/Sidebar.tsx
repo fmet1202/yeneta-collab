@@ -1,6 +1,7 @@
 "use client";
 
-import { MessageSquare, Plus, Trash2, FolderPlus, Folder as FolderIcon, LogOut } from "lucide-react";
+import { useState } from "react";
+import { MessageSquare, Plus, Trash2, FolderPlus, Folder as FolderIcon, LogOut, ChevronDown, ChevronRight } from "lucide-react";
 import { Language } from "@/types";
 import { useSession, signOut } from "next-auth/react";
 
@@ -18,6 +19,8 @@ export default function Sidebar({ sessions, folders, currentSessionId, onSelect,
   const { data: session } = useSession();
   const isAmharic = language === "amharic";
 
+  const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
+
   const groupedSessions = sessions.reduce((acc, s) => {
     const f = s.folder || "uncategorized";
     if (!acc[f]) acc[f] = [];
@@ -30,10 +33,13 @@ export default function Sidebar({ sessions, folders, currentSessionId, onSelect,
     if (name && name.trim()) onCreateFolder(name.trim());
   };
 
+  const toggleFolder = (folderName: string) => {
+    setCollapsedFolders(prev => ({ ...prev, [folderName]: !prev[folderName] }));
+  };
+
   return (
     <div className="flex flex-col w-full h-full bg-[#1a1a2e] text-white overflow-hidden">
       
-      {/* Top Action Buttons */}
       <div className={`p-4 border-b border-gray-700 flex shrink-0 ${isCollapsed ? "flex-col items-center gap-3" : "gap-2"}`}>
         <button onClick={() => onNew()} title="New Chat" className={`flex items-center justify-center gap-2 bg-[#1a7a4c] hover:bg-[#135c39] transition-all rounded-lg font-medium text-sm shadow-md ${isCollapsed ? "w-10 h-10 p-0" : "flex-1 py-2.5"}`}>
           <Plus size={18} /> {!isCollapsed && (isAmharic ? "አዲስ" : "New Chat")}
@@ -43,28 +49,43 @@ export default function Sidebar({ sessions, folders, currentSessionId, onSelect,
         </button>
       </div>
 
-      {/* Chat List (Fills available space, hidden when collapsed) */}
       <div className="flex-1 overflow-y-auto p-2 space-y-4 custom-scrollbar">
         {!isCollapsed && (
           <>
-            {folders.map((folderName) => (
-              <div key={folderName} className="mb-2 bg-black/20 rounded-xl border border-gray-800 overflow-hidden">
-                <div className="flex justify-between items-center px-3 py-2 bg-gray-800/80" title={`Folder: ${folderName}`}>
-                  <span className="text-xs font-bold text-gray-300 uppercase tracking-wide flex items-center gap-2">
-                    <FolderIcon size={12} className="text-[#f0a500]" /> {folderName}
-                  </span>
-                  <div className="flex gap-1">
-                    <button onClick={() => onNew(folderName)} className="p-1 hover:text-[#1a7a4c] hover:bg-white/10 rounded"><Plus size={14}/></button>
-                    <button onClick={() => { if(window.confirm("Delete folder?")) onDeleteFolder(folderName); }} className="p-1 hover:text-red-500 hover:bg-white/10 rounded"><Trash2 size={14}/></button>
+            {folders.map((folderName) => {
+              const isFolderClosed = collapsedFolders[folderName];
+
+              return (
+                <div key={folderName} className="mb-2 bg-black/20 rounded-xl border border-gray-800 overflow-hidden transition-all">
+                  
+                  <div 
+                    onClick={() => toggleFolder(folderName)}
+                    className="flex justify-between items-center px-3 py-2 bg-gray-800/80 cursor-pointer hover:bg-gray-700/80 transition-colors select-none" 
+                    title={`Folder: ${folderName}`}
+                  >
+                    <span className="text-xs font-bold text-gray-300 uppercase tracking-wide flex items-center gap-1">
+                      {isFolderClosed ? <ChevronRight size={14} className="text-gray-400"/> : <ChevronDown size={14} className="text-gray-400"/>}
+                      <FolderIcon size={12} className="text-[#f0a500] ml-1" /> {folderName}
+                    </span>
+                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => onNew(folderName)} className="p-1 hover:text-[#1a7a4c] hover:bg-white/10 rounded" title="New chat in folder"><Plus size={14}/></button>
+                      <button onClick={() => { if(window.confirm("Delete folder? Chats inside will be moved to Recent.")) onDeleteFolder(folderName); }} className="p-1 hover:text-red-500 hover:bg-white/10 rounded" title="Delete folder"><Trash2 size={14}/></button>
+                    </div>
                   </div>
+                  
+                  {!isFolderClosed && (
+                    <div className="p-1 animate-in slide-in-from-top-2 duration-200">
+                      {(groupedSessions[folderName] || []).length === 0 && (
+                        <div className="text-[10px] text-gray-500 p-2 text-center italic">Empty</div>
+                      )}
+                      {(groupedSessions[folderName] || []).map((s) => (
+                        <SessionItem key={s.id} session={s} isCurrent={currentSessionId === s.id} onSelect={onSelect} onDelete={onDelete} onMove={onMove} />
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="p-1">
-                  {(groupedSessions[folderName] || []).map((s) => (
-                    <SessionItem key={s.id} session={s} isCurrent={currentSessionId === s.id} onSelect={onSelect} onDelete={onDelete} onMove={onMove} />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="px-1">
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 px-2">
@@ -80,7 +101,6 @@ export default function Sidebar({ sessions, folders, currentSessionId, onSelect,
         )}
       </div>
 
-      {/* Pinned Bottom User Profile */}
       <div 
         className={`p-3 border-t border-gray-700 hover:bg-white/5 transition-colors cursor-pointer flex items-center shrink-0 ${isCollapsed ? "justify-center" : "justify-between"}`} 
         onClick={() => { if(window.confirm("Sign out of Yeneta?")) signOut(); }} 
