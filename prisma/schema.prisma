@@ -1,13 +1,64 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  
+  gender        String    @default("female")
+  aiVoice       String    @default("female")
+  role          String    @default("student")
+  level         String    @default("high_school")
+
+  sessions      ChatSession[]
+  folders       Folder[]
+  createdAt     DateTime  @default(now())
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions  ChatSession[]
+  
+  @@unique([name, userId])
+}
+
+model ChatSession {
+  id        String    @id @default(cuid())
+  title     String    @default("New Chat")
+  language  String    @default("amharic")
+  
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  folderId  String?
+  folder    Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  messages  Message[]
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  role      String
+  type      String
+  content   String      @db.Text
+  fileName  String?
+  
+  createdAt DateTime    @default(now())
 }
