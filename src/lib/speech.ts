@@ -114,11 +114,14 @@ export const startListening = (
     return null;
   }
 
-  try {
-    const recognition = new SpeechRecognitionAPI();
+  let isManuallyStopped = false;
+  let recognition: any = null;
 
+  try {
+    recognition = new SpeechRecognitionAPI();
     recognition.lang = language === "amharic" ? "am-ET" : "en-US";
-    recognition.continuous = false;
+    
+    recognition.continuous = false; 
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
@@ -130,26 +133,38 @@ export const startListening = (
     };
 
     recognition.onerror = (event: any) => {
+      if (event.error === "aborted" || event.error === "no-speech") {
+        return; 
+      }
+
       const errorMap: Record<string, string> = {
-        "no-speech": "No speech detected. Please speak louder.",
-        aborted: "Microphone was stopped.",
         "audio-capture": "No microphone found.",
         "not-allowed": "Microphone permission denied. Check browser settings.",
-        network: "Network error. Speech-to-text requires internet.",
+        "network": "Network error. Speech-to-text requires internet.",
       };
-      
-      if (event.error !== "aborted" && event.error !== "no-speech") {
-        onError(errorMap[event.error] || `Mic error: ${event.error}`);
+
+      if (errorMap[event.error]) {
+        isManuallyStopped = true;
+        onError(errorMap[event.error]);
       }
     };
 
     recognition.onend = () => {
-      onEnd(); 
+      if (!isManuallyStopped) {
+        try {
+          recognition.start();
+        } catch {
+          onEnd();
+        }
+      } else {
+        onEnd();
+      }
     };
 
     recognition.start();
 
     return () => {
+      isManuallyStopped = true;
       try {
         recognition.stop();
       } catch {}
