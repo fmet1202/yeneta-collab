@@ -27,6 +27,12 @@ export interface UserProfile {
   image: string;
 }
 
+export interface UserProfileData {
+  gender: "male" | "female";
+  role: "student" | "teacher" | "other";
+  level: "primary" | "high_school" | "university" | "other";
+}
+
 export type Language = "amharic" | "english";
 export type VoiceGender = "female" | "male";
 export type DocumentAction = "explain" | "summarize" | "quiz";
@@ -45,7 +51,7 @@ export interface ChatRequest {
   message: string;
   language: Language;
   history: Message[];
-  userGender?: "male" | "female";
+  userProfile?: UserProfileData;
 }
 
 export interface ApiResponse {
