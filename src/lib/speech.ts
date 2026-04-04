@@ -1,15 +1,10 @@
 let currentAudio: HTMLAudioElement | null = null;
 let ttsAbortController: AbortController | null = null;
 let currentPlayToken = 0;
+let isPlayingQueue = false;
 
 interface SpeechRecognitionEvent extends Event {
-  results: {
-    [index: number]: {
-      [index: number]: {
-        transcript: string;
-      };
-    };
-  };
+  results: { [index: number]: { [index: number]: { transcript: string } } };
 }
 
 export const speakText = async (
@@ -21,76 +16,98 @@ export const speakText = async (
 
   stopSpeaking();
 
-  const abortCtrl = new AbortController();
-  ttsAbortController = abortCtrl;
   const token = ++currentPlayToken;
+  isPlayingQueue = true;
 
-  try {
-    const res = await fetch("/api/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, language, gender }),
-      signal: abortCtrl.signal,
-    });
-
-    if (!res.ok) throw new Error("TTS failed");
-    if (token !== currentPlayToken) return;
-
-    const audioBlob = await res.blob();
-    if (token !== currentPlayToken) return;
-
-    const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
-    currentAudio = audio;
-
-    await new Promise<void>((resolve, reject) => {
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-        if (currentAudio === audio) currentAudio = null;
-        resolve();
-      };
-
-      audio.onpause = () => {
-        URL.revokeObjectURL(audioUrl);
-        if (currentAudio === audio) currentAudio = null;
-        resolve();
-      };
-
-      audio.onerror = () => {
-        URL.revokeObjectURL(audioUrl);
-        if (currentAudio === audio) currentAudio = null;
-        reject(new Error("Audio playback failed"));
-      };
-
-      if (token !== currentPlayToken) {
-        URL.revokeObjectURL(audioUrl);
-        resolve();
-        return;
-      }
-
-      audio.play().catch(reject);
-    });
-  } catch (error: any) {
-    if (error.name !== "AbortError") {
-      console.error("TTS error:", error);
+  const rawChunks = text.match(/[^.?!።\n]+[.?!።\n]*/g)?.map(s => s.trim()).filter(s => s) || [text];
+  
+  const chunks: string[] = [];
+  let currentChunk = "";
+  
+  for (const phrase of rawChunks) {
+    currentChunk += (currentChunk ? " " : "") + phrase;
+    if (currentChunk.length > 80) { 
+      chunks.push(currentChunk);
+      currentChunk = "";
     }
   }
+  if (currentChunk) chunks.push(currentChunk);
+
+  for (let i = 0; i < chunks.length; i++) {
+    if (token !== currentPlayToken || !isPlayingQueue) break;
+
+    const chunk = chunks[i];
+    const abortCtrl = new AbortController();
+    ttsAbortController = abortCtrl;
+
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: chunk, language, gender }),
+        signal: abortCtrl.signal,
+      });
+
+      if (!res.ok) throw new Error("TTS failed");
+      if (token !== currentPlayToken || !isPlayingQueue) break;
+
+      const audioBlob = await res.blob();
+      if (token !== currentPlayToken || !isPlayingQueue) break;
+
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      currentAudio = audio;
+
+      await new Promise<void>((resolve, reject) => {
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          if (currentAudio === audio) currentAudio = null;
+          resolve();
+        };
+
+        audio.onpause = () => {
+          URL.revokeObjectURL(audioUrl);
+          if (currentAudio === audio) currentAudio = null;
+          resolve();
+        };
+
+        audio.onerror = () => {
+          URL.revokeObjectURL(audioUrl);
+          if (currentAudio === audio) currentAudio = null;
+          reject(new Error("Audio playback failed"));
+        };
+
+        if (token !== currentPlayToken || !isPlayingQueue) {
+          URL.revokeObjectURL(audioUrl);
+          resolve();
+          return;
+        }
+
+        audio.play().catch(reject);
+      });
+      
+    } catch (error: any) {
+      if (error.name !== "AbortError") console.error("TTS chunk error:", error);
+      break;
+    }
+  }
+  
+  isPlayingQueue = false;
 };
 
 export const stopSpeaking = (): void => {
-  currentPlayToken++;
-
+  currentPlayToken++; 
+  isPlayingQueue = false;
+  
   if (ttsAbortController) {
     ttsAbortController.abort();
     ttsAbortController = null;
   }
-
   if (currentAudio) {
     currentAudio.pause();
     currentAudio.currentTime = 0;
     currentAudio = null;
   }
-
   if (typeof window !== "undefined" && window.speechSynthesis) {
     window.speechSynthesis.cancel();
   }
