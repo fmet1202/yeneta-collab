@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import ChatWindow from "@/components/ChatWindow";
 import ChatInput from "@/components/ChatInput";
 import Sidebar from "@/components/Sidebar";
-import { Message, Language, DocumentAction, ApiResponse } from "@/types";
+import { Message, Language, DocumentAction, ApiResponse, UserProfileData } from "@/types";
 
 import {
   getAllSessions,
@@ -18,6 +18,7 @@ import {
   getFolders,
   addFolder,
   deleteFolder,
+  moveSessionToFolder,
 } from "@/lib/storage";
 
 export default function ChatPage() {
@@ -31,8 +32,10 @@ export default function ChatPage() {
   const [isProcessingDoc, setIsProcessingDoc] = useState(false);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [userGender, setUserGender] = useState<"male" | "female" | null>(null);
-  const [showGenderModal, setShowGenderModal] = useState(false);
+  
+  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [tempProfile, setTempProfile] = useState<UserProfileData>({ gender: "female", role: "student", level: "high_school" });
 
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
   const [sessionsList, setSessionsList] = useState<any[]>([]);
@@ -46,41 +49,31 @@ export default function ChatPage() {
   }, [status, router]);
 
   useEffect(() => {
-    const savedGender = localStorage.getItem("yeneta_gender") as
-      | "male"
-      | "female"
-      | null;
-    if (savedGender) setUserGender(savedGender);
-    else setShowGenderModal(true);
+    const savedProfile = localStorage.getItem("yeneta_profile");
+    if (savedProfile) {
+      setUserProfile(JSON.parse(savedProfile));
+    } else {
+      setShowProfileModal(true);
+    }
   }, []);
 
-  const saveGender = (g: "male" | "female") => {
-    localStorage.setItem("yeneta_gender", g);
-    setUserGender(g);
-    setShowGenderModal(false);
+  const handleSaveProfile = () => {
+    localStorage.setItem("yeneta_profile", JSON.stringify(tempProfile));
+    setUserProfile(tempProfile);
+    setShowProfileModal(false);
   };
 
   useEffect(() => {
     if (status === "authenticated") {
       const all = getAllSessions();
       setSessionsList(all);
+      if (typeof getFolders === "function") setFoldersList(getFolders());
 
-      if (typeof getFolders === "function") {
-        setFoldersList(getFolders());
-      }
-
-      if (all.length > 0) {
-        const session = all[0];
-        setCurrentSessionId(session.id);
-        setMessages(session.messages);
-        setLanguage(session.language || "amharic");
-      } else {
-        const newSession = createNewSession(language);
-        saveSession(newSession);
-        setCurrentSessionId(newSession.id);
-        setMessages([]);
-        setSessionsList(getAllSessions());
-      }
+      const newSession = createNewSession(language);
+      saveSession(newSession);
+      setCurrentSessionId(newSession.id);
+      setMessages([]);
+      setSessionsList(getAllSessions());
 
       isHydratingRef.current = false;
     }
@@ -121,7 +114,6 @@ export default function ChatPage() {
       setCurrentSessionId(id);
       setMessages([]);
     }
-
     if (window.innerWidth < 768) setIsSidebarOpen(false);
   };
 
@@ -132,12 +124,8 @@ export default function ChatPage() {
       setCurrentSessionId(id);
       setMessages(session.messages);
       setLanguage(session.language || "amharic");
-
       if (window.innerWidth < 768) setIsSidebarOpen(false);
-
-      setTimeout(() => {
-        isHydratingRef.current = false;
-      }, 0);
+      setTimeout(() => { isHydratingRef.current = false; }, 0);
     }
   };
 
@@ -145,55 +133,48 @@ export default function ChatPage() {
     deleteSession(id);
     const updated = getAllSessions();
     setSessionsList(updated);
+    if (currentSessionId === id) handleNewSession();
+  };
 
-    if (currentSessionId === id) {
-      if (updated.length > 0) {
-        handleLoadSession(updated[0].id);
-      } else {
-        handleNewSession();
-      }
+  const handleMoveSession = (id: string) => {
+    if (foldersList.length === 0) {
+      alert("Please create a folder first.");
+      return;
+    }
+    const target = prompt(`Move to which folder?\nAvailable: ${foldersList.join(", ")}`);
+    if (target && foldersList.includes(target.trim())) {
+      moveSessionToFolder(id, target.trim());
+      setSessionsList(getAllSessions());
+    } else if (target) {
+      alert("Folder not found.");
     }
   };
 
   const handleCreateFolder = (name: string) => {
-    if (typeof addFolder === "function") {
-      addFolder(name);
-      setFoldersList(getFolders());
-    }
+    if (typeof addFolder === "function") { addFolder(name); setFoldersList(getFolders()); }
   };
 
   const handleDeleteFolder = (name: string) => {
-    if (typeof deleteFolder === "function") {
-      deleteFolder(name);
-      setFoldersList(getFolders());
-      setSessionsList(getAllSessions());
-    }
+    if (typeof deleteFolder === "function") { deleteFolder(name); setFoldersList(getFolders()); setSessionsList(getAllSessions()); }
   };
 
   const stopGeneration = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      setIsTyping(false);
-    }
+    if (abortControllerRef.current) { abortControllerRef.current.abort(); setIsTyping(false); }
   };
 
-  const handleEditMessage = (
-    messageId: string,
-    newText: string
-  ) => {
+  const handleEditMessage = (messageId: string, newText: string) => {
     const index = messages.findIndex((m) => m.id === messageId);
     if (index === -1) return;
 
-    const newHistory = messages.slice(0, index);
+    const msg = messages[index];
+    const sliceIndex = msg.role === "assistant" ? Math.max(0, index - 1) : index;
+
+    const newHistory = messages.slice(0, sliceIndex);
     setMessages(newHistory);
     handleSendMessage(newText, undefined, newHistory);
   };
 
-  const handleSendMessage = async (
-    text: string,
-    stagedFile?: File,
-    customHistory?: Message[]
-  ) => {
+  const handleSendMessage = async (text: string, stagedFile?: File, customHistory?: Message[]) => {
     const historyToUse = customHistory || messages;
 
     if (stagedFile) {
@@ -201,27 +182,13 @@ export default function ChatPage() {
       return;
     }
 
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: text,
-      timestamp: Date.now(),
-      type: "text",
-    };
-
+    const userMsg: Message = { id: Date.now().toString(), role: "user", content: text, timestamp: Date.now(), type: "text" };
     const assistantId = (Date.now() + 1).toString();
 
     setMessages(() => [
       ...historyToUse,
       userMsg,
-      {
-        id: assistantId,
-        role: "assistant",
-        content: "",
-        timestamp: Date.now(),
-        type: "text",
-        isStreaming: true,
-      } as Message,
+      { id: assistantId, role: "assistant", content: "", timestamp: Date.now(), type: "text", isStreaming: true } as Message,
     ]);
 
     setIsTyping(true);
@@ -231,16 +198,11 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          language,
-          history: historyToUse,
-          userGender,
-        }),
+        body: JSON.stringify({ message: text, language, history: historyToUse, userProfile }),
         signal: abortControllerRef.current.signal,
       });
 
-      if (!res.body) throw new Error("No stream body returned");
+      if (!res.body) throw new Error("No stream returned");
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -250,65 +212,26 @@ export default function ChatPage() {
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
-        const chunkValue = decoder.decode(value || new Uint8Array());
-        fullText += chunkValue;
-
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId ? { ...m, content: fullText } : m
-          )
-        );
+        fullText += decoder.decode(value || new Uint8Array());
+        setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: fullText } : m));
       }
     } catch (error: any) {
       if (error.name !== "AbortError") {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId
-              ? { ...m, content: "Error generating response." }
-              : m
-          )
-        );
+        setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: "Error generating response." } : m));
       }
     } finally {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId ? { ...m, isStreaming: false } : m
-        )
-      );
+      setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, isStreaming: false } : m));
       setIsTyping(false);
     }
   };
 
-  const handleProcessDocument = async (
-    file: File,
-    action: DocumentAction
-  ) => {
+  const handleProcessDocument = async (file: File, action: DocumentAction) => {
     setIsProcessingDoc(true);
     setShowUpload(false);
-
     const isImage = file.type.startsWith("image/");
     const endpoint = isImage ? "/api/upload" : "/api/document";
-    const actionMap = {
-      explain:
-        language === "amharic" ? "ይህን አስረዳኝ" : "Explain this",
-      summarize:
-        language === "amharic" ? "ይህን አጠቃልልኝ" : "Summarize this",
-      quiz:
-        language === "amharic" ? "በዚህ ፈትነኝ" : "Quiz me on this",
-    };
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        role: "user",
-        content: actionMap[action],
-        timestamp: Date.now(),
-        type: isImage ? "image" : "document",
-        fileName: file.name,
-      },
-    ]);
-
+    
+    setMessages((prev) => [...prev, { id: Date.now().toString(), role: "user", content: "Process Document", timestamp: Date.now(), type: isImage ? "image" : "document", fileName: file.name }]);
     setIsTyping(true);
 
     try {
@@ -316,50 +239,17 @@ export default function ChatPage() {
       formData.append(isImage ? "image" : "document", file);
       formData.append("language", language);
       if (!isImage) formData.append("action", action);
-      formData.append("userGender", userGender || "female");
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        body: formData,
-      });
-
+      const res = await fetch(endpoint, { method: "POST", body: formData });
       const data: ApiResponse = await res.json();
-      if (data.error) throw new Error(data.error);
-
+      
       if (action === "quiz" && data.quiz) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: (Date.now() + 1).toString(),
-            role: "assistant",
-            content: JSON.stringify(data.quiz),
-            timestamp: Date.now(),
-            type: "quiz",
-          },
-        ]);
+        setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: JSON.stringify(data.quiz), timestamp: Date.now(), type: "quiz" }]);
       } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: (Date.now() + 1).toString(),
-            role: "assistant",
-            content: data.explanation || data.response || "Done.",
-            timestamp: Date.now(),
-            type: "text",
-          },
-        ]);
+        setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: data.explanation || data.response || "Done.", timestamp: Date.now(), type: "text" }]);
       }
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: "Failed to process the file.",
-          timestamp: Date.now(),
-          type: "text",
-        },
-      ]);
+      setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: "Failed to process the file.", timestamp: Date.now(), type: "text" }]);
     } finally {
       setIsProcessingDoc(false);
       setIsTyping(false);
@@ -368,46 +258,49 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-white relative font-noto">
-      {showGenderModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl text-center animate-in fade-in zoom-in">
-            <div className="w-16 h-16 bg-green-100 text-[#1a7a4c] flex items-center justify-center rounded-full mx-auto mb-4 text-3xl">
-              🎓
+      
+      {showProfileModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in fade-in zoom-in">
+            <div className="w-16 h-16 bg-green-100 text-[#1a7a4c] flex items-center justify-center rounded-full mx-auto mb-4 text-3xl">🎓</div>
+            <h2 className="text-2xl font-bold text-[#1a1a2e] mb-2 text-center">Welcome to Yeneta</h2>
+            <p className="text-gray-500 mb-6 text-sm text-center">Let's personalize your AI learning experience.</p>
+            
+            <div className="space-y-4 mb-8">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">I am a...</label>
+                <select className="w-full mt-1 p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#1a7a4c]" value={tempProfile.role} onChange={e => setTempProfile({...tempProfile, role: e.target.value as any})}>
+                  <option value="student">Student</option>
+                  <option value="teacher">Teacher</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Education Level</label>
+                <select className="w-full mt-1 p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#1a7a4c]" value={tempProfile.level} onChange={e => setTempProfile({...tempProfile, level: e.target.value as any})}>
+                  <option value="primary">Primary School</option>
+                  <option value="high_school">High School</option>
+                  <option value="university">University / College</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Gender (for Amharic grammar)</label>
+                <select className="w-full mt-1 p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#1a7a4c]" value={tempProfile.gender} onChange={e => setTempProfile({...tempProfile, gender: e.target.value as any})}>
+                  <option value="female">Female (ሴት)</option>
+                  <option value="male">Male (ወንድ)</option>
+                </select>
+              </div>
             </div>
-            <h2 className="text-xl font-bold text-[#1a1a2e] mb-2">
-              Welcome to Yeneta <br />
-              <span className="text-[#1a7a4c]">
-                እንኳን በደህና መጡ
-              </span>
-            </h2>
-            <p className="text-gray-500 mb-6 text-sm">
-              To provide personalized Amharic responses, please select your
-              gender. <br />
-              ትክክለኛ የአማርኛ ምላሽ ለመስጠት፣ እባክዎ ጾታዎን ይምረጡ።
-            </p>
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => saveGender("male")}
-                className="px-6 py-3 border-2 border-gray-200 rounded-xl hover:border-[#1a7a4c] hover:bg-green-50 font-bold text-[#1a1a2e] transition-all"
-              >
-                Male / ወንድ
-              </button>
-              <button
-                onClick={() => saveGender("female")}
-                className="px-6 py-3 border-2 border-gray-200 rounded-xl hover:border-[#1a7a4c] hover:bg-green-50 font-bold text-[#1a1a2e] transition-all"
-              >
-                Female / ሴት
-              </button>
-            </div>
+
+            <button onClick={handleSaveProfile} className="w-full bg-[#1a7a4c] text-white py-4 rounded-xl font-bold hover:bg-[#135c39] transition-colors shadow-lg">
+              Start Learning →
+            </button>
           </div>
         </div>
       )}
 
-      <div
-        className={`${
-          isSidebarOpen ? "w-64" : "w-0"
-        } transition-all duration-300 ease-in-out shrink-0 relative z-40 h-full overflow-hidden bg-[#1a1a2e] shadow-2xl md:shadow-none`}
-      >
+      <div className={`${isSidebarOpen ? "w-64" : "w-0"} transition-all duration-300 ease-in-out shrink-0 relative z-40 h-full overflow-hidden bg-[#1a1a2e] shadow-2xl md:shadow-none`}>
         <div className="w-64 h-full absolute inset-0">
           <Sidebar
             sessions={sessionsList}
@@ -418,49 +311,23 @@ export default function ChatPage() {
             onDelete={handleDeleteSession}
             onCreateFolder={handleCreateFolder}
             onDeleteFolder={handleDeleteFolder}
+            onMove={handleMoveSession}
             language={language}
           />
         </div>
       </div>
 
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 z-30 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+      {isSidebarOpen && <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
 
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
-        <Navbar
-          language={language}
-          setLanguage={setLanguage}
-          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
+        <Navbar language={language} setLanguage={setLanguage} onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
         <ChatWindow
-          messages={messages}
-          language={language}
-          isTyping={
-            isTyping && !messages.some((m) => (m as any).isStreaming)
-          }
-          showUpload={showUpload}
-          setShowUpload={setShowUpload}
-          onProcessDocument={handleProcessDocument}
-          isUploading={isProcessingDoc}
-          onRetry={(id) =>
-            handleEditMessage(
-              id,
-              messages[messages.findIndex((m) => m.id === id) - 1]?.content || ""
-            )
-          }
+          messages={messages} language={language} isTyping={isTyping && !messages.some((m) => (m as any).isStreaming)}
+          showUpload={showUpload} setShowUpload={setShowUpload} onProcessDocument={handleProcessDocument} isUploading={isProcessingDoc}
+          onRetry={(id) => handleEditMessage(id, messages[messages.findIndex((m) => m.id === id) - 1]?.content || "")}
           onEditMessage={handleEditMessage}
         />
-        <ChatInput
-          onSend={handleSendMessage}
-          onToggleUpload={() => setShowUpload(!showUpload)}
-          language={language}
-          isLoading={isTyping || isProcessingDoc}
-          onStopGeneration={stopGeneration}
-        />
+        <ChatInput onSend={handleSendMessage} onToggleUpload={() => setShowUpload(!showUpload)} language={language} isLoading={isTyping || isProcessingDoc} onStopGeneration={stopGeneration} />
       </div>
     </div>
   );
