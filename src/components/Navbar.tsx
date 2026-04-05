@@ -70,10 +70,10 @@ export default function Navbar({ language, setLanguage, onMenuClick, isSidebarOp
               className="flex items-center gap-1 p-1 rounded-full bg-surface-glass backdrop-blur-md border border-border-subtle hover:bg-surface-hover transition-all duration-200 group shrink-0 shadow-sm"
               aria-label="Toggle theme"
             >
-              <div className={`flex items-center justify-center w-7 h-7 rounded-full transition-all duration-300 ${theme !== "dark" ? 'bg-primary text-content-inverse shadow-sm' : 'text-content-muted group-hover:text-content'}`}>
+              <div className={`flex items-center justify-center w-7 h-7 rounded-full transition-all duration-300 ${resolvedTheme !== "dark" ? 'bg-primary text-content-inverse shadow-sm' : 'text-content-muted group-hover:text-content'}`}>
                 <Sun size={14} />
               </div>
-              <div className={`flex items-center justify-center w-7 h-7 rounded-full transition-all duration-300 ${theme === "dark" ? 'bg-primary text-content-inverse shadow-sm' : 'text-content-muted group-hover:text-content'}`}>
+              <div className={`flex items-center justify-center w-7 h-7 rounded-full transition-all duration-300 ${resolvedTheme === "dark" ? 'bg-primary text-content-inverse shadow-sm' : 'text-content-muted group-hover:text-content'}`}>
                 <Moon size={14} />
               </div>
             </button>
