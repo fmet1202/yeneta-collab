@@ -33,10 +33,13 @@ export default function LandingPage() {
           Your Language. Your Learning.
         </p>
         
-        <p className="text-lg md:text-xl text-content-muted mb-10 max-w-2xl leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-          Upload your notes, PDFs, or slides. Get instant explanations, 
-          summaries, and personalized quizzes in both Amharic and English.
-        </p>
+        {/* Trust / Value Strip */}
+        <div className="flex flex-wrap justify-center gap-6 md:gap-12 mb-10 opacity-80 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+          <div className="flex items-center gap-2 text-content-muted text-sm font-semibold"><Globe size={18} className="text-primary" /> Bilingual (Am & En)</div>
+          <div className="flex items-center gap-2 text-content-muted text-sm font-semibold"><ShieldCheck size={18} className="text-primary" /> Personalized AI</div>
+          <div className="flex items-center gap-2 text-content-muted text-sm font-semibold"><FileText size={18} className="text-primary" /> Document-Based</div>
+          <div className="flex items-center gap-2 text-content-muted text-sm font-semibold"><Mic size={18} className="text-primary" /> Voice Enabled</div>
+        </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
           {status === "authenticated" ? (
@@ -63,13 +66,10 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        {/* Trust / Value Strip */}
-        <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-20 opacity-80 animate-in fade-in duration-1000 delay-500">
-          <div className="flex items-center gap-2 text-content-muted text-sm font-semibold"><Globe size={18} className="text-primary" /> Bilingual (Am & En)</div>
-          <div className="flex items-center gap-2 text-content-muted text-sm font-semibold"><ShieldCheck size={18} className="text-primary" /> Personalized AI</div>
-          <div className="flex items-center gap-2 text-content-muted text-sm font-semibold"><FileText size={18} className="text-primary" /> Document-Based</div>
-          <div className="flex items-center gap-2 text-content-muted text-sm font-semibold"><Mic size={18} className="text-primary" /> Voice Enabled</div>
-        </div>
+        <p className="text-lg md:text-xl text-content-muted mt-20 max-w-2xl leading-relaxed animate-in fade-in duration-1000 delay-500">
+          Upload your notes, PDFs, or slides. Get instant explanations, 
+          summaries, and personalized quizzes in both Amharic and English.
+        </p>
 
         {/* Feature Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl w-full mt-16 mb-24 text-left animate-in fade-in slide-in-from-bottom-12 duration-700 delay-700">
