@@ -2,6 +2,8 @@
 
 > **"Learn Smarter in Your Own Language."**
 
+🔗 **Live Demo**: [https://yeneta-sigma.vercel.app/](https://yeneta-sigma.vercel.app/)
+
 **Yeneta** is an AI-powered, personalized bilingual study assistant built specifically to empower Ethiopian students. It bridges the gap between complex study materials and accessible learning by providing document analysis, smart summaries, interactive quizzes, and voice-assisted tutoring in both **Amharic** and **English**.
 
 Built by **CODE GE'EZ**.
