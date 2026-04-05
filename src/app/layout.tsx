@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   title: "የኔታ | Yeneta - AI Study Assistant",
   description:
     "AI-powered personalized study assistant for Ethiopian students",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
