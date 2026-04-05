@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
     const file = formData.get("document") as File | null;
     const language = (formData.get("language") as Language) || "amharic";
     const action = (formData.get("action") as DocumentAction) || "explain";
+    const questionCount = parseInt(formData.get("questionCount") as string) || 5;
 
     if (!file) {
       return NextResponse.json(
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     // ===== PDF — Gemini reads directly =====
     if (fileName.endsWith(".pdf")) {
       const base64 = buffer.toString("base64");
-      const prompt = getDocumentPrompt(language, action);
+      const prompt = getDocumentPrompt(language, action, questionCount);
 
       const result = await model.generateContent([
         prompt,
@@ -58,13 +59,13 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      return processTextContent(content, language, action);
+      return processTextContent(content, language, action, questionCount);
     }
 
     // ===== PPTX — Send to Gemini directly =====
     if (fileName.endsWith(".pptx")) {
       const base64 = buffer.toString("base64");
-      const prompt = getDocumentPrompt(language, action);
+      const prompt = getDocumentPrompt(language, action, questionCount);
 
       const result = await model.generateContent([
         prompt,
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      return processTextContent(content, language, action);
+      return processTextContent(content, language, action, questionCount);
     }
 
     return NextResponse.json(
@@ -119,9 +120,10 @@ export async function POST(req: NextRequest) {
 async function processTextContent(
   content: string,
   language: Language,
-  action: DocumentAction
+  action: DocumentAction,
+  questionCount: number
 ) {
-  const prompt = getDocumentPrompt(language, action);
+  const prompt = getDocumentPrompt(language, action, questionCount);
 
   const result = await model.generateContent(
     `${prompt}\n\nDocument Content:\n${content}`
@@ -139,17 +141,13 @@ async function processTextContent(
 // Helper: Parse quiz JSON from AI response
 function parseQuizResponse(response: string) {
   try {
-    // Try to extract JSON from the response
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const quiz = JSON.parse(jsonMatch[0]);
       return NextResponse.json({ quiz });
     }
-
-    // If no JSON found, return raw response
     return NextResponse.json({ response });
   } catch {
-    // If JSON parsing fails, return raw response
     return NextResponse.json({ response });
   }
 }
