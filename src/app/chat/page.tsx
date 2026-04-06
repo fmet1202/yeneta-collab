@@ -418,7 +418,7 @@ export default function ChatPage() {
 
   if (isInitializing) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background flex-col gap-5">
+      <div className="flex h-[100dvh] items-center justify-center bg-background flex-col gap-5">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
         <div className="text-center">
           <h2 className="text-2xl font-bold text-content tracking-tight font-headline">Yeneta</h2>
@@ -429,14 +429,14 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background relative font-body text-content">
+    <div className="flex h-[100dvh] overflow-hidden bg-background relative font-body text-content">
       
       {/* USER PROFILE MODAL / SETTINGS DRAWER */}
       {showProfileModal && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => userProfile && setShowProfileModal(false)}></div>
           
-          <aside className="relative z-10 w-full max-w-[400px] h-screen bg-surface-glass backdrop-blur-xl shadow-sm border-l border-border-subtle flex flex-col animate-in slide-in-from-right duration-300">
+          <aside className="relative z-10 w-full max-w-[400px] h-full bg-surface-glass backdrop-blur-xl shadow-sm border-l border-border-subtle flex flex-col animate-in slide-in-from-right duration-300">
             <header className="flex items-center justify-between px-8 py-8 shrink-0">
               <h1 className="text-2xl font-bold tracking-tight text-content font-headline">
                 {userProfile ? "Settings" : "Welcome"}
