@@ -23,8 +23,7 @@ export default function Navbar({ language, setLanguage, onMenuClick, isSidebarOp
   useEffect(() => setMounted(true),[]);
 
   const handleToggleTheme = () => {
-    const currentTheme = resolvedTheme || "light";
-    setTheme(currentTheme === "dark" ? "light" : "dark");
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
 
   useEffect(() => {
