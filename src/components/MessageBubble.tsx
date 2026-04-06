@@ -1,10 +1,6 @@
 "use client";
 
 import { Message, Language } from "@/types";
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css";
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
 import typescript from "highlight.js/lib/languages/typescript";
@@ -17,6 +13,7 @@ import sql from "highlight.js/lib/languages/sql";
 import "highlight.js/styles/github-dark.css";
 import SpeakButton from "./SpeakButton";
 import QuizCard from "./QuizCard";
+import StreamMarkdown from "./StreamMarkdown";
 import { FileText, Image as ImageIcon, Copy, Check, Edit2, Download, RefreshCw, Languages, Loader2 } from "lucide-react";
 import { useState, useEffect, memo, useCallback } from "react";
 
@@ -207,26 +204,7 @@ const MessageBubble = memo(function MessageBubble({ message, language, aiVoice, 
               </div>
             ) : (
               <div className={`font-body leading-relaxed text-sm ${isUser ? "user-markdown" : ""} ${message.isStreaming && !isUser ? "typing-cursor" : ""}`}>
-                {message.isStreaming && !isUser ? (
-                  <pre className="whitespace-pre-wrap break-words font-sans text-sm">{message.content}</pre>
-                ) : (
-                  <ReactMarkdown
-                    remarkPlugins={[remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                    components={{
-                      code({ node, inline, className, children, ...props }: any) {
-                        const match = /language-(\w+)/.exec(className || "");
-                        const codeString = String(children).replace(/\n$/, "");
-                        if (!inline && match) {
-                          return <CodeBlock match={match} codeString={codeString} className={className} {...props}>{children}</CodeBlock>;
-                        }
-                        return <code className={`${isUser ? "bg-black/20 text-content-inverse" : ""} rounded-md px-1.5 py-0.5 font-mono text-xs`} {...props}>{children}</code>;
-                      },
-                    }}
-                  >
-                    {message.content}
-                  </ReactMarkdown>
-                )}
+                <StreamMarkdown content={message.content} isStreaming={message.isStreaming && !isUser} />
               </div>
             )}
 
