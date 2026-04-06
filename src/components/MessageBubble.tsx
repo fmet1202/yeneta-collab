@@ -5,10 +5,35 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import hljs from "highlight.js/lib/core";
+import javascript from "highlight.js/lib/languages/javascript";
+import typescript from "highlight.js/lib/languages/typescript";
+import python from "highlight.js/lib/languages/python";
+import css from "highlight.js/lib/languages/css";
+import xml from "highlight.js/lib/languages/xml";
+import bash from "highlight.js/lib/languages/bash";
+import json from "highlight.js/lib/languages/json";
+import sql from "highlight.js/lib/languages/sql";
+import "highlight.js/styles/github-dark.css";
 import SpeakButton from "./SpeakButton";
 import QuizCard from "./QuizCard";
 import { FileText, Image as ImageIcon, Copy, Check, Edit2, Download, RefreshCw, Languages, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("js", javascript);
+hljs.registerLanguage("typescript", typescript);
+hljs.registerLanguage("ts", typescript);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("py", python);
+hljs.registerLanguage("css", css);
+hljs.registerLanguage("html", xml);
+hljs.registerLanguage("xml", xml);
+hljs.registerLanguage("bash", bash);
+hljs.registerLanguage("sh", bash);
+hljs.registerLanguage("shell", bash);
+hljs.registerLanguage("json", json);
+hljs.registerLanguage("sql", sql);
 
 interface ExtendedMessage extends Message {
   isStreaming?: boolean;
@@ -25,21 +50,44 @@ interface Props {
 
 const CodeBlock = ({ match, codeString, children, className, ...props }: any) => {
   const [copied, setCopied] = useState(false);
+  const [highlighted, setHighlighted] = useState("");
+  const lang = match ? match[1] : "";
+
+  useEffect(() => {
+    const code = String(children).replace(/\n$/, "");
+    try {
+      if (lang && hljs.getLanguage(lang)) {
+        const result = hljs.highlight(code, { language: lang });
+        setHighlighted(result.value);
+      } else {
+        const result = hljs.highlightAuto(code);
+        setHighlighted(result.value);
+      }
+    } catch {
+      setHighlighted(code);
+    }
+  }, [children, lang]);
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(codeString);
+    navigator.clipboard.writeText(String(children).replace(/\n$/, ""));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
   return (
     <div className="relative group mt-4 mb-6">
-      <div className="absolute right-3 top-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center gap-2">
-        <span className="text-[10px] font-label font-bold text-content-inverse/80 bg-black/50 px-2 py-1 rounded uppercase tracking-widest">{match ? match[1] : "code"}</span>
+      <div className="absolute right-3 top-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center gap-2 z-10">
+        <span className="text-[10px] font-label font-bold text-white/80 bg-white/10 px-2 py-1 rounded uppercase tracking-widest">{lang || "code"}</span>
         <button onClick={handleCopy} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all border border-white/10 flex items-center gap-1">
-          {copied ? <Check size={14} className="text-primary-text" /> : <Copy size={14} />}
+          {copied ? <Check size={14} /> : <Copy size={14} />}
         </button>
       </div>
-      <pre className="bg-[#1e293b] p-5 rounded-xl border border-border-strong font-mono text-sm overflow-x-auto custom-scrollbar leading-relaxed text-[#f8fafc]">
-        <code className={className} {...props}>{children}</code>
+      <pre className="p-5 rounded-xl border border-border-strong text-sm overflow-x-auto custom-scrollbar leading-relaxed !bg-[#0d1117] hljs">
+        <code 
+          className={className}
+          dangerouslySetInnerHTML={{ __html: highlighted }}
+          {...props}
+        />
       </pre>
     </div>
   );

@@ -206,3 +206,36 @@ body {
   vertical-align: middle;
   animation: blink 1s step-end infinite;
 }
+
+/* Syntax Highlighting - Code Blocks */
+.hljs {
+  background: #0d1117 !important;
+  color: #c9d1d9 !important;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in { color: #ff7b72 !important; }
+.hljs-string,
+.hljs-title,
+.hljs-name { color: #a5d6ff !important; }
+.hljs-comment { color: #8b949e !important; font-style: italic; }
+.hljs-number,
+.hljs-literal { color: #79c0ff !important; }
+.hljs-function .hljs-title { color: #d2a8ff !important; }
+.hljs-attr,
+.hljs-variable { color: #79c0ff !important; }
+.hljs-type { color: #ffa657 !important; }
+.hljs-params { color: #c9d1d9 !important; }
+.hljs-meta { color: #f0883e !important; }
+.hljs-class .hljs-title { color: #ffa657 !important; }
+.hljs-operator { color: #ff7b72 !important; }
+.hljs-punctuation { color: #c9d1d9 !important; }
+.hljs-property { color: #79c0ff !important; }
+.hljs-tag { color: #7ee787 !important; }
+.hljs-selector-id,
+.hljs-selector-class { color: #ffa657 !important; }
+.hljs-regexp { color: #a5d6ff !important; }
+.hljs-symbol { color: #79c0ff !important; }
+.hljs-template-variable { color: #79c0ff !important; }
+.hljs-deletion { color: #ffa198; background: rgba(255, 129, 130, 0.15) !important; }
+.hljs-addition { color: #7ee787; background: rgba(63, 185, 80, 0.15) !important; }
