@@ -245,12 +245,19 @@ export default function ChatPage() {
       const decoder = new TextDecoder();
       let done = false;
       let fullText = "";
+      let lastUpdate = Date.now();
+      const UPDATE_INTERVAL = 50;
 
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
         fullText += decoder.decode(value || new Uint8Array());
-        setMessages((prev) => prev.map((m) => m.id === id ? { ...m, content: fullText } : m));
+        
+        const now = Date.now();
+        if (now - lastUpdate >= UPDATE_INTERVAL || done) {
+          lastUpdate = now;
+          setMessages((prev) => prev.map((m) => m.id === id ? { ...m, content: fullText } : m));
+        }
       }
     } catch (error: any) {
       if (error.name !== "AbortError") {
@@ -332,13 +339,19 @@ export default function ChatPage() {
       const decoder = new TextDecoder();
       let done = false;
       let fullText = "";
+      let lastUpdate = Date.now();
+      const UPDATE_INTERVAL = 50;
 
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
         fullText += decoder.decode(value || new Uint8Array());
         
-        setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: fullText } : m));
+        const now = Date.now();
+        if (now - lastUpdate >= UPDATE_INTERVAL || done) {
+          lastUpdate = now;
+          setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: fullText } : m));
+        }
       }
     } catch (error: any) {
       if (error.name !== "AbortError") {
