@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Language } from "@/types";
 import LanguageToggle from "./LanguageToggle";
-import { GraduationCap, Menu, Square, Moon, Sun } from "lucide-react";
+import { GraduationCap, Menu, Square, Moon, Sun, X } from "lucide-react";
 import { subscribeToTTS, stopSpeaking } from "@/lib/speech";
 import { useTheme } from "next-themes";
 
@@ -12,9 +12,10 @@ interface Props {
   language: Language;
   setLanguage: (lang: Language) => void;
   onMenuClick?: () => void;
+  isSidebarOpen?: boolean;
 }
 
-export default function Navbar({ language, setLanguage, onMenuClick }: Props) {
+export default function Navbar({ language, setLanguage, onMenuClick, isSidebarOpen }: Props) {
   const[isAudioPlaying, setIsAudioPlaying] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
 
@@ -37,7 +38,7 @@ export default function Navbar({ language, setLanguage, onMenuClick }: Props) {
       <div className="flex items-center gap-3 min-w-0">
         {onMenuClick && (
           <button onClick={onMenuClick} className="p-2 text-content-muted hover:bg-surface-hover hover:text-content rounded-lg transition-colors active:scale-95 border border-transparent hover:border-border-subtle shrink-0">
-            <Menu size={24} />
+            {isSidebarOpen ? <X size={24} className="transition-transform duration-200" /> : <Menu size={24} className="transition-transform duration-200" />}
           </button>
         )}
         
