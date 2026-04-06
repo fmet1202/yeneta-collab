@@ -229,6 +229,8 @@ export default function ChatPage() {
   const handleTranslateMessage = async (id: string, text: string) => {
     const targetLanguage = /[ሀ-፿]/.test(text) ? "english" : "amharic";
     setMessages((prev) => prev.map((m) => m.id === id ? { ...m, content: "", isStreaming: true } : m));
+    
+    abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
 
     try {
@@ -238,6 +240,14 @@ export default function ChatPage() {
         body: JSON.stringify({ text, targetLanguage }),
         signal: abortControllerRef.current.signal,
       });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        if (errorText === "Translation failed") {
+          throw new Error("Translation failed - Gemini API error");
+        }
+        throw new Error(`Server error: ${res.status}`);
+      }
 
       if (!res.body) throw new Error("No stream returned");
 
@@ -261,7 +271,8 @@ export default function ChatPage() {
       }
     } catch (error: any) {
       if (error.name !== "AbortError") {
-        setMessages((prev) => prev.map((m) => m.id === id ? { ...m, content: "Translation failed." } : m));
+        console.error("Translation error:", error);
+        setMessages((prev) => prev.map((m) => m.id === id ? { ...m, content: "Translation failed. Please try again." } : m));
       }
     } finally {
       setMessages((prev) => prev.map((m) => m.id === id ? { ...m, isStreaming: false } : m));

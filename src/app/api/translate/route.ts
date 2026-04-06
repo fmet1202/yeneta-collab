@@ -30,8 +30,13 @@ export async function POST(req: NextRequest) {
         "Transfer-Encoding": "chunked",
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Translation error:", error);
+    
+    if (error.message?.includes("quota") || error.message?.includes("rate limit")) {
+      return new Response("Translation quota exceeded. Please try again later.", { status: 429 });
+    }
+    
     return new Response("Translation failed", { status: 500 });
   }
 }
