@@ -8,19 +8,32 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  image         String?
+  id                  String        @id @default(cuid())
+  email               String        @unique
+  name                String?
+  image               String?
   
-  gender        String    @default("female")
-  aiVoice       String    @default("female")
-  role          String    @default("student")
-  level         String    @default("high_school")
+  gender              String        @default("female")
+  aiVoice             String        @default("female")
+  role                String        @default("student")
+  level               String        @default("high_school")
+  onboardingCompleted Boolean       @default(false)
 
-  sessions      ChatSession[]
-  folders       Folder[]
-  createdAt     DateTime  @default(now())
+  sessions            ChatSession[]
+  folders             Folder[]
+  documents           Document[]
+  createdAt           DateTime      @default(now())
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName  String
+  mimeType  String
+  content   String   @db.Text
+  isBase64  Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model Folder {
