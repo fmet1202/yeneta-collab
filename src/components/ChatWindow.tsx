@@ -12,14 +12,13 @@ interface Props {
   isTyping: boolean;
   showUpload: boolean;
   setShowUpload: (val: boolean) => void;
-  onProcessDocument: (file: File, action: DocumentAction, questionCount?: number) => void;
+  onProcessDocument: (file: File | null, action: DocumentAction, questionCount?: number, instruction?: string) => void;
   isUploading: boolean;
   onRetry: (messageId: string) => void;
   onEditMessage: (messageId: string, newText: string) => void;
-  onTranslate?: (messageId: string, text: string) => void;
 }
 
-const ChatWindow = memo(function ChatWindow({ messages, language, aiVoice, isTyping, showUpload, setShowUpload, onProcessDocument, isUploading, onRetry, onEditMessage, onTranslate }: Props) {
+const ChatWindow = memo(function ChatWindow({ messages, language, aiVoice, isTyping, showUpload, setShowUpload, onProcessDocument, isUploading, onRetry, onEditMessage }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -27,9 +26,7 @@ const ChatWindow = memo(function ChatWindow({ messages, language, aiVoice, isTyp
     const container = scrollContainerRef.current;
     if (!container) return;
     
-    // Only auto-scroll if user is within 150px of bottom
     const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 150;
-    
     if (isAtBottom) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }
@@ -52,17 +49,6 @@ const ChatWindow = memo(function ChatWindow({ messages, language, aiVoice, isTyp
                 : "Your personal tutor and educational companion powered by deep intelligence."}
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-md pt-8">
-            <div className="p-4 rounded-xl bg-surface border border-border-subtle hover:bg-surface-hover transition-all text-left text-sm cursor-default group">
-              <span className="block text-primary font-bold mb-1">{language === "amharic" ? "አስረዳኝ" : "Explain"}</span>
-              <span className="text-content-muted group-hover:text-content transition-colors">{language === "amharic" ? "የኳንተም ፊዚክስን በቀላል ቋንቋ..." : "Quantum physics in simple terms..."}</span>
-            </div>
-            <div className="p-4 rounded-xl bg-surface border border-border-subtle hover:bg-surface-hover transition-all text-left text-sm cursor-default group">
-              <span className="block text-primary font-bold mb-1">{language === "amharic" ? "ተንትን" : "Analyze"}</span>
-              <span className="text-content-muted group-hover:text-content transition-colors">{language === "amharic" ? "ይህን ሰነድ ለዋና ዋና ነጥቦች..." : "This document for key insights..."}</span>
-            </div>
-          </div>
         </div>
       ) : (
         <div className="w-full max-w-3xl flex flex-col space-y-6 pb-6">
@@ -74,10 +60,8 @@ const ChatWindow = memo(function ChatWindow({ messages, language, aiVoice, isTyp
               aiVoice={aiVoice} 
               onRetry={onRetry} 
               onEdit={onEditMessage} 
-              onTranslate={onTranslate} 
             />
           ))}
-          {/* This loader now triggers during file uploads before the stream begins */}
           {isTyping && (
             <div className="flex flex-col items-start space-y-2 w-full my-4 animate-in fade-in duration-300">
               <div className="flex items-center gap-3 mb-1">
