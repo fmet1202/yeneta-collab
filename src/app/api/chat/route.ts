@@ -2,8 +2,16 @@ import { NextRequest } from "next/server";
 import { model } from "@/lib/gemini";
 import { getSystemPrompt } from "@/lib/prompts";
 import { ChatRequest } from "@/types";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  }
   try {
     const { message, language, history, userProfile }: ChatRequest = await req.json();
 

@@ -21,13 +21,22 @@ interface Props {
 
 const ChatWindow = memo(function ChatWindow({ messages, language, aiVoice, isTyping, showUpload, setShowUpload, onProcessDocument, isUploading, onRetry, onEditMessage, onTranslate }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "instant", block: "end" });
-  }, [messages.length, isTyping]);
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    // Only auto-scroll if user is within 150px of bottom
+    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 150;
+    
+    if (isAtBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages, isTyping]);
 
   return (
-    <div className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar py-8 px-4 md:px-8 relative z-0 flex flex-col items-center gpu-accelerated overscroll-behavior-y-contain">
+    <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar py-8 px-4 md:px-8 relative z-0 flex flex-col items-center gpu-accelerated overscroll-behavior-y-contain">
       {messages.length === 0 ? (
         <div className="h-full w-full max-w-3xl flex flex-col items-center justify-center py-20 text-center space-y-6 animate-in fade-in zoom-in duration-500">
           <div className="w-20 h-20 rounded-3xl bg-surface flex items-center justify-center shadow-sm border border-border-subtle">

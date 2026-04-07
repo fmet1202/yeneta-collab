@@ -61,10 +61,6 @@ export default function ChatPage() {
   }, [moveModalState.isOpen, showProfileModal, userProfile]);
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/");
-  }, [status, router]);
-
-  useEffect(() => {
     if (status === "authenticated") {
       const loadCloudData = async () => {
         try {
@@ -261,7 +257,7 @@ export default function ChatPage() {
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
-        fullText += decoder.decode(value || new Uint8Array());
+        fullText += decoder.decode(value || new Uint8Array(), { stream: !doneReading });
         
         const now = Date.now();
         if (now - lastUpdate >= UPDATE_INTERVAL || done) {
@@ -356,7 +352,7 @@ export default function ChatPage() {
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
-        fullText += decoder.decode(value || new Uint8Array());
+        fullText += decoder.decode(value || new Uint8Array(), { stream: !doneReading });
         
         const now = Date.now();
         if (now - lastUpdate >= UPDATE_INTERVAL || done) {

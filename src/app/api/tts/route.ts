@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const VOICES = {
   amharic: {
@@ -13,6 +15,11 @@ const VOICES = {
 };
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { text, language, gender } = await req.json();
 

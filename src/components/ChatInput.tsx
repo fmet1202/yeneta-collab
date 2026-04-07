@@ -29,16 +29,6 @@ export default function ChatInput({ onSend, onToggleUpload, language, isLoading,
 
   const isAmharic = language === "amharic";
 
-  // SAFE FIX: Smooth auto-resize logic for the textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = '44px';
-      if (text) {
-        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 128)}px`;
-      }
-    }
-  }, [text]);
-
   const handleSend = useCallback(() => {
     if ((text.trim() || stagedFile) && !isLoading && !isTranscribing) {
       if (text.trim()) setMessageHistory((prev) => [text.trim(), ...prev]);
@@ -143,7 +133,7 @@ export default function ChatInput({ onSend, onToggleUpload, language, isLoading,
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isTranscribing ? (isAmharic ? "ድምጽዎን እየተረጎምኩ ነው..." : "Transcribing audio...") : isRecording ? (isAmharic ? "እየሰማሁ ነው (ለማቆም ይጫኑ)..." : "Listening (click to stop)...") : (isAmharic ? "የኔታን ማንኛውንም ጥያቄ ይጠይቁ..." : "Ask Yeneta anything...")}
-            className={`flex-1 bg-transparent border-none outline-none focus:ring-0 text-content py-2.5 px-2 font-body text-sm min-w-0 resize-none max-h-32 ${speechError ? "placeholder-error-text/50" : "placeholder-content-muted/60"}`}
+            className={`flex-1 bg-transparent border-none outline-none focus:ring-0 text-content py-2.5 px-2 font-body text-sm min-w-0 resize-none max-h-32 auto-resize-textarea ${speechError ? "placeholder-error-text/50" : "placeholder-content-muted/60"}`}
             disabled={isLoading || isRecording || isTranscribing}
             rows={1}
           />

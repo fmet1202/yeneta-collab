@@ -3,8 +3,16 @@ import { model } from "@/lib/gemini";
 import { getDocumentPrompt } from "@/lib/prompts";
 import { Language, DocumentAction } from "@/types";
 import mammoth from "mammoth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   try {
     const formData = await req.formData();
     const file = formData.get("document") as File | null;

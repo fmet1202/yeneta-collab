@@ -253,3 +253,9 @@ body {
 .hljs-template-variable { color: #79c0ff !important; }
 .hljs-deletion { color: #ffa198; background: rgba(255, 129, 130, 0.15) !important; }
 .hljs-addition { color: #7ee787; background: rgba(63, 185, 80, 0.15) !important; }
+
+.auto-resize-textarea {
+  field-sizing: content;
+  min-height: 44px;
+  max-height: 128px;
+}
