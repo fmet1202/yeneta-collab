@@ -425,7 +425,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden bg-background font-body text-content">
+    <div className="flex flex-col h-[100dvh] overflow-hidden overscroll-none bg-background font-body text-content">
       
       {(showProfileModal || moveModalState.isOpen) && (
         <div className="fixed inset-0 z-[35] bg-background/70 backdrop-blur-md animate-in fade-in duration-200" />
