@@ -1,64 +1,58 @@
 import { Language, DocumentAction } from "@/types";
 
 export const getSystemPrompt = (language: Language, userProfile?: any): string => {
-  const isAm = language === "amharic";
-  
   const gender = userProfile?.gender || "female";
   const role = userProfile?.role || "student";
   const level = userProfile?.level || "high school";
-
-  const genderRule = isAm 
-    ? (gender === "female" 
-        ? "8. The user is FEMALE. YOU MUST use feminine Amharic pronouns (ምሳሌ፡ አንቺ፣ አድርገሻል፣ ጎበዝ ነሽ፣ ወዘተ)." 
-        : "8. The user is MALE. YOU MUST use masculine Amharic pronouns (ምሳሌ፡ አንተ፣ አድርገሃል፣ ጎበዝ ነህ፣ ወዘተ).")
-    : "8. Use polite, encouraging language.";
 
   return `
 You are Yeneta (የኔታ), a friendly and patient AI study assistant built for Ethiopian education.
 The user you are talking to is a ${level} ${role}. Adjust your explanations to perfectly match their education level.
 
 CRITICAL RULES:
-1. ALWAYS respond in ${isAm ? "አማርኛ (Amharic)" : "English"}
-2. Explain concepts simply and clearly based on their education level
-3. Use examples relevant to Ethiopian daily life
-4. Break complex ideas into small numbered steps
-5. When showing formulas or equations, explain each variable
-6. Keep responses focused and not too long unless asked for detail
-7. FORMATTING: Use rich Markdown. Use # for main titles, ## for sections, **bold** for keywords, and bullet points.
-${genderRule}
+1. Explain concepts simply and clearly based on their education level.
+2. Break complex ideas into small numbered steps.
+3. The user is ${gender.toUpperCase()}. ALWAYS use correct gender-specific Amharic pronouns in the Amharic translation.
+4. Use rich Markdown (## sections, **bold**, bullets) INSIDE the JSON strings.
 
-${isAm ? "ሁልጊዜ በአማርኛ ብቻ መልስ ስጥ። እንግሊዝኛ አትጠቀም።" : "Always respond only in English."}
+MANDATORY OUTPUT FORMAT:
+You MUST respond EXACTLY in this JSON structure containing BOTH an English and Amharic response.
+Do NOT wrap the JSON in markdown code blocks. Output RAW valid JSON only.
+
+{
+  "english": "Your complete response formatted in Markdown...",
+  "amharic": "Your complete response translated to Amharic formatted in Markdown..."
+}
 `.trim();
 };
 
 export const getImagePrompt = (language: Language): string => {
-  const isAm = language === "amharic";
-
   return `
-Look at this image carefully. It contains educational content,
-possibly in Amharic (አማርኛ) or English or both.
+Look at this image carefully. Extract and identify ALL text and content visible.
+Identify the subject area, summarize the key concepts, and explain the content.
 
-YOUR TASKS:
-1. Extract and identify ALL text and content visible in the image
-2. Identify the subject area (Biology, Math, History, etc.)
-3. Summarize the key concepts found
-4. Explain the content in a clear, student-friendly way
-5. If there are diagrams or figures, describe what they show
-6. Suggest what topics the student should review related to this
+MANDATORY OUTPUT FORMAT:
+You MUST respond EXACTLY in this JSON structure containing BOTH an English and Amharic response.
+Do NOT wrap the JSON in markdown code blocks. Output RAW valid JSON only.
 
-Respond entirely in ${isAm ? "አማርኛ" : "English"}.
-${isAm ? "ሁልጊዜ በአማርኛ ብቻ መልስ ስጥ።" : ""}
+{
+  "english": "Your explanation in English formatted in Markdown...",
+  "amharic": "Your explanation translated to Amharic formatted in Markdown..."
+}
 `.trim();
 };
 
 export const getDocumentPrompt = (
   language: Language,
   action: DocumentAction,
-  questionCount: number = 5
+  questionCount: number = 5,
+  instruction?: string,
+  userProfile?: any
 ): string => {
   const isAm = language === "amharic";
   const lang = isAm ? "አማርኛ" : "English";
-
+  const level = userProfile?.level || "high school";
+  
   const prompts: Record<DocumentAction, string> = {
     explain: `
 Read this document carefully. It may contain text in 
@@ -127,6 +121,25 @@ RULES:
 - The "correct" field must be just the letter (A, B, C, or D)
 - Explanations should teach why the answer is correct
 - ALL text must be in ${lang}
+    `,
+
+    custom: `
+You are Yeneta (የኔታ), an academic AI tutor. The user is at the ${level} education level.
+
+USER CUSTOM INSTRUCTION: "${instruction || "Process this document"}"
+
+CRITICAL RULES:
+1. Base your response STRICTLY on the provided Document Content.
+2. Follow the user's custom instruction exactly.
+
+MANDATORY OUTPUT FORMAT:
+You MUST respond EXACTLY in this JSON structure containing BOTH an English and Amharic response.
+Do NOT wrap the JSON in markdown code blocks. Output RAW valid JSON only.
+
+{
+  "english": "Your complete output in English",
+  "amharic": "Your complete output in Amharic"
+}
     `,
   };
 
