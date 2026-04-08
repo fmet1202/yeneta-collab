@@ -259,3 +259,20 @@ body {
   min-height: 44px;
   max-height: 128px;
 }
+
+/* ==========================================================================
+   LIGHT THEME SELECT OVERRIDES
+   Overrides the default blue native OS highlight on <option> tags in Light Mode
+   ========================================================================== */
+html:not(.dark) select {
+  accent-color: var(--primary-base);
+}
+html:not(.dark) select option:hover,
+html:not(.dark) select option:focus,
+html:not(.dark) select option:active,
+html:not(.dark) select option:checked {
+  background: linear-gradient(var(--primary-base), var(--primary-base)) !important;
+  background-color: var(--primary-base) !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 0 10px 100px var(--primary-base) !important;
+}
