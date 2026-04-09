@@ -57,15 +57,15 @@ export const speakText = async (text: string, language: "amharic" | "english", g
       
       // Determine pause type after this sentence
       const endsWithAmharicPeriod = /።$/.test(sentence);
-      const isLastInParagraph = s === sentences.length - 1;
+      const endsWithEnglishPeriod = /[.?!]$/.test(sentence);
       const isLastParagraph = p === paragraphs.length - 1;
       const hasNewlineAfter = !isLastParagraph && paragraphs[p + 1]?.trim();
       
       let pauseMs = 0;
       if (endsWithAmharicPeriod) {
         pauseMs = 150; // Add pause for Amharic sentence ending TTS doesn't recognize
-      } else if (hasNewlineAfter) {
-        pauseMs = 100; // Brief pause before newline
+      } else if (endsWithEnglishPeriod) {
+        pauseMs = 120; // Brief pause for English sentence endings
       }
       
       // Combine short sentences into ~100 char chunks
