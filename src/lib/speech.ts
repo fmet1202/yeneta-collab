@@ -37,48 +37,16 @@ export const speakText = async (text: string, language: "amharic" | "english", g
     .replace(/^\d+\.\s/gm, "") 
     .trim();
 
-  // Split into sentence-like chunks with markers for pause types
-  // Marker: @PAUSE for short pause (sentence end), @BREAK for longer pause (newline)
-  const allChunks: { text: string; pause: number }[] = [];
-  
-  // Split on newlines first, then handle sentence endings
-  const paragraphs = cleanText.split(/\n/);
-  
-  for (let p = 0; p < paragraphs.length; p++) {
-    const para = paragraphs[p].trim();
-    if (!para) continue;
-    
-    // Split paragraph by sentence endings: . ? ! ።
-    const sentences = para.match(/[^.?!።]+[.?!።]*/g) || [para];
-    
-    for (let s = 0; s < sentences.length; s++) {
-      const sentence = sentences[s].trim();
-      if (!sentence) continue;
-      
-      // Detect sentence-ending punctuation for controlled pause
-      const endsWithAmharic = /።$/.test(sentence);
-      const endsWithEnglish = /[.?!]$/.test(sentence);
-      const pauseMs = endsWithAmharic ? 150 : endsWithEnglish ? 120 : 0;
-      
-      // Strip punctuation - we'll handle pauses ourselves
-      const textForTTS = sentence.replace(/[.?!።]+$/, "").trim();
-      
-      // Combine short sentences into ~100 char chunks
-      if (allChunks.length > 0 && allChunks[allChunks.length - 1].text.length + textForTTS.length < 100) {
-        allChunks[allChunks.length - 1].text += " " + textForTTS;
-      } else if (textForTTS) {
-        allChunks.push({ text: textForTTS, pause: pauseMs });
-      }
-    }
-  }
-  
-  if (allChunks.length === 0) allChunks.push({ text: cleanText.slice(0, 100), pause: 0 });
+  // Simple chunking: split by newlines, send to TTS as-is, let TTS handle prosody
+  const lines = cleanText.split(/\n/).filter(l => l.trim());
+  const chunks = lines.filter(l => l).slice(0, 10); // Limit chunks
+  if (chunks.length === 0) chunks.push(cleanText.slice(0, 500));
 
   try {
     for (let i = 0; i < allChunks.length; i++) {
       if (token !== currentPlayToken || !isPlayingQueue) break;
 
-      const { text: chunk, pause } = allChunks[i];
+      const chunk = chunks[i];
       const abortCtrl = new AbortController();
       ttsAbortController = abortCtrl;
 
@@ -107,10 +75,6 @@ export const speakText = async (text: string, language: "amharic" | "english", g
         audio.play().catch(reject);
       });
 
-      // Controlled pause based on sentence type
-      if (pause > 0 && i < allChunks.length - 1 && token === currentPlayToken && isPlayingQueue) {
-        await new Promise(resolve => setTimeout(resolve, pause));
-      }
     }
   } catch (error: any) {
     if (error.name !== "AbortError") console.error("TTS error:", error);
