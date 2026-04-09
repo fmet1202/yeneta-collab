@@ -37,18 +37,18 @@ export const speakText = async (text: string, language: "amharic" | "english", g
     .replace(/^\d+\.\s/gm, "") 
     .trim();
 
-  // Split only on double newlines to separate paragraphs
-  const paragraphs = cleanText.split(/\n\n+/).filter(p => p.trim());
+  // Split on single newlines to break up text
+  const lines = cleanText.split(/\n/).filter(l => l.trim());
   
-  // Recombine into chunks while keeping paragraphs together
+  // Recombine into small chunks for quick, responsive playback
   const chunks: string[] = [];
   let currentChunk = "";
   
-  for (const para of paragraphs) {
-    const trimmed = para.trim();
+  for (const line of lines) {
+    const trimmed = line.trim();
     if (!trimmed) continue;
     
-    if (currentChunk.length + trimmed.length > 180 && currentChunk) {
+    if (currentChunk.length + trimmed.length > 100 && currentChunk) {
       chunks.push(currentChunk);
       currentChunk = trimmed;
     } else {
@@ -56,7 +56,7 @@ export const speakText = async (text: string, language: "amharic" | "english", g
     }
   }
   if (currentChunk) chunks.push(currentChunk);
-  if (chunks.length === 0) chunks.push(cleanText.slice(0, 200));
+  if (chunks.length === 0) chunks.push(cleanText.slice(0, 100));
 
   try {
     for (let i = 0; i < chunks.length; i++) {
