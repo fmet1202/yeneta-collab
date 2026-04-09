@@ -20,9 +20,13 @@ let currentPlayToken = 0;
 export const speakText = async (text: string, language: "amharic" | "english", gender: "male" | "female" = "female"): Promise<void> => {
   if (typeof window === "undefined") return;
 
-  stopSpeaking();
   const token = ++currentPlayToken;
   setTTSState(true);
+
+  // Stop any current playback immediately without resetting the token
+  if (ttsAbortController) { ttsAbortController.abort(); ttsAbortController = null; }
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
 
   const cleanText = text
     .replace(/```[\s\S]*?```/g, "") 
@@ -34,26 +38,18 @@ export const speakText = async (text: string, language: "amharic" | "english", g
     .replace(/\n+/g, " ") 
     .trim();
 
-  // Split on double newlines or sentence boundaries; let TTS handle inline pauses
-  const rawChunks = cleanText.split(/(?:\n\n+|\.\s+)/).filter(s => s.trim());
+  // Split by sentence-ending punctuation for natural pauses, but keep punctuation in chunks
+  const rawChunks = cleanText.match(/[^.?!።]+[.?!።]*/g)?.map(s => s.trim()).filter(s => s) || [cleanText];
   
-  // Recombine into 200-char chunks for smoother playback
+  // Recombine into ~120-char chunks for balance between responsiveness and natural pauses
   const chunks: string[] = [];
   let currentChunk = "";
   
   for (const phrase of rawChunks) {
-    const trimmed = phrase.trim();
-    if (!trimmed) continue;
-    
-    if (currentChunk.length + trimmed.length > 200 && currentChunk) {
-      chunks.push(currentChunk.trim());
-      currentChunk = trimmed;
-    } else {
-      currentChunk += (currentChunk ? " " : "") + trimmed;
-    }
+    currentChunk += (currentChunk ? " " : "") + phrase;
+    if (currentChunk.length > 120) { chunks.push(currentChunk); currentChunk = ""; }
   }
-  if (currentChunk.trim()) chunks.push(currentChunk.trim());
-  if (chunks.length === 0) chunks.push(cleanText.slice(0, 500));
+  if (currentChunk) chunks.push(currentChunk);
 
   try {
     for (let i = 0; i < chunks.length; i++) {
@@ -87,6 +83,11 @@ export const speakText = async (text: string, language: "amharic" | "english", g
         if (token !== currentPlayToken || !isPlayingQueue) { URL.revokeObjectURL(audioUrl); resolve(); return; }
         audio.play().catch(reject);
       });
+
+      // Small pause between chunks for natural rhythm (250ms)
+      if (i < chunks.length - 1 && token === currentPlayToken && isPlayingQueue) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
     }
   } catch (error: any) {
     if (error.name !== "AbortError") console.error("TTS error:", error);
