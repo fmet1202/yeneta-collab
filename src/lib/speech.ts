@@ -34,15 +34,26 @@ export const speakText = async (text: string, language: "amharic" | "english", g
     .replace(/\n+/g, " ") 
     .trim();
 
-  const rawChunks = cleanText.match(/[^.?!።]+[.?!።]*/g)?.map(s => s.trim()).filter(s => s) || [cleanText];
+  // Split on double newlines or sentence boundaries; let TTS handle inline pauses
+  const rawChunks = cleanText.split(/(?:\n\n+|\.\s+)/).filter(s => s.trim());
+  
+  // Recombine into 200-char chunks for smoother playback
   const chunks: string[] = [];
   let currentChunk = "";
   
   for (const phrase of rawChunks) {
-    currentChunk += (currentChunk ? " " : "") + phrase;
-    if (currentChunk.length > 80) { chunks.push(currentChunk); currentChunk = ""; }
+    const trimmed = phrase.trim();
+    if (!trimmed) continue;
+    
+    if (currentChunk.length + trimmed.length > 200 && currentChunk) {
+      chunks.push(currentChunk.trim());
+      currentChunk = trimmed;
+    } else {
+      currentChunk += (currentChunk ? " " : "") + trimmed;
+    }
   }
-  if (currentChunk) chunks.push(currentChunk);
+  if (currentChunk.trim()) chunks.push(currentChunk.trim());
+  if (chunks.length === 0) chunks.push(cleanText.slice(0, 500));
 
   try {
     for (let i = 0; i < chunks.length; i++) {
