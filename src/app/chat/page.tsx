@@ -322,15 +322,29 @@ export default function ChatPage() {
         setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: fullText } : m));
       }
 
-      const markdownImageRegex = /!\[(.*?)\]\((https?:\/\/[^\s)]+)\)/g;
       const imageUrls: string[] = [];
+      const addImageUrl = (url: string) => { if (!imageUrls.includes(url)) imageUrls.push(url); };
+
+      // Extract markdown images: ![alt](url)
       let match;
-      while ((match = markdownImageRegex.exec(fullText)) !== null) {
-        imageUrls.push(match[2]);
-      }
+      const mdImageRegex = /!\[(.*?)\]\((https?:\/\/[^\s)]+)\)/g;
+      while ((match = mdImageRegex.exec(fullText)) !== null) addImageUrl(match[2]);
+
+      // Extract raw URLs with image extensions
+      const rawImageRegex = /(https?:\/\/[^\s<>"']+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s<>"']*)?)/gi;
+      while ((match = rawImageRegex.exec(fullText)) !== null) addImageUrl(match[1]);
+
+      // Extract URLs from image services
+      const serviceRegex = /(https?:\/\/(?:unsplash\.com|picsum\.photos|imgur\.com|i\.imgur\.com|images\.unsplash\.com)\/[^\s<>"']+)/gi;
+      while ((match = serviceRegex.exec(fullText)) !== null) addImageUrl(match[1]);
 
       if (imageUrls.length > 0) {
-        const cleanContent = fullText.replace(/!\[(.*?)\]\((https?:\/\/[^\s)]+)\)/g, "").trim();
+        let cleanContent = fullText
+          .replace(/!\[(.*?)\]\([^)]+\)/g, "")
+          .replace(/(https?:\/\/[^\s<>"']+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s<>"']*)?)/gi, "")
+          .replace(/(https?:\/\/(?:unsplash\.com|picsum\.photos|imgur\.com|i\.imgur\.com|images\.unsplash\.com)\/[^\s<>"']+)/gi, "")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
         
         setMessages((prev) => prev.map((m) => 
           m.id === assistantId 
