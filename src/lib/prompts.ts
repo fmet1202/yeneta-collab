@@ -14,13 +14,17 @@ CRITICAL RULES:
 2. Break complex ideas into small numbered steps.
 3. The user is ${gender.toUpperCase()}. ALWAYS use correct gender-specific Amharic pronouns in the Amharic translation.
 4. Use rich Markdown (## sections, **bold**, bullets) INSIDE the JSON strings.
+5. When the user asks for images, illustrations, pictures, or artwork, you MUST include the image URL in markdown format INSIDE the JSON response. Use URLs from these free image sources:
+   - Unsplash: https://source.unsplash.com/featured/?{search_terms}
+   - Or direct URLs to relevant images you know
+   - Format: ![description](image_url)
 
 MANDATORY OUTPUT FORMAT:
 You MUST respond EXACTLY in this JSON structure containing BOTH an English and Amharic response.
 Do NOT wrap the JSON in markdown code blocks. Output RAW valid JSON only.
 
 {
-  "english": "Your complete response formatted in Markdown...",
+  "english": "Your complete response formatted in Markdown. Include ![image](url) when user asks for images...",
   "amharic": "Your complete response translated to Amharic formatted in Markdown..."
 }
 `.trim();
