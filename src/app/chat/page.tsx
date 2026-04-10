@@ -328,46 +328,35 @@ export default function ChatPage() {
       };
 
       // Try to parse as JSON first (the AI returns JSON with english/amharic)
+      let textContent = fullText;
       try {
         const cleanedForJson = fullText.replace(/^```json\n?/, "").replace(/```$/, "").trim();
         const parsed = JSON.parse(cleanedForJson);
-        const textContent = parsed.english || parsed.amharic || "";
-        
-        // Extract from text content
-        const mdImageRegex = /!\[(.*?)\]\((https?:\/\/[^\s)]+)\)/g;
-        let match;
-        while ((match = mdImageRegex.exec(textContent)) !== null) addImageUrl(match[2]);
-
-        // Raw URLs with extensions
-        const rawRegex = /(https?:\/\/[^\s<>"'\)]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s<>"']*)?)/gi;
-        while ((match = rawRegex.exec(textContent)) !== null) addImageUrl(match[1]);
-
-        // Image service URLs
-        const svcRegex = /(https?:\/\/(?:unsplash\.com|picsum\.photos|imgur\.com|i\.imgur\.com|images\.unsplash\.com)\/[^\s<>"']+)/gi;
-        while ((match = svcRegex.exec(textContent)) !== null) addImageUrl(match[1]);
-
+        textContent = parsed.english || parsed.amharic || fullText;
       } catch {
-        // Not JSON, extract from raw text
-        const mdImageRegex = /!\[(.*?)\]\((https?:\/\/[^\s)]+)\)/g;
-        let match;
-        while ((match = mdImageRegex.exec(fullText)) !== null) addImageUrl(match[2]);
-
-        const rawRegex = /(https?:\/\/[^\s<>"'\)]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s<>"']*)?)/gi;
-        while ((match = rawRegex.exec(fullText)) !== null) addImageUrl(match[1]);
-
-        const svcRegex = /(https?:\/\/(?:unsplash\.com|picsum\.photos|imgur\.com|i\.imgur\.com|images\.unsplash\.com)\/[^\s<>"']+)/gi;
-        while ((match = svcRegex.exec(fullText)) !== null) addImageUrl(match[1]);
+        // Not JSON, use full text
       }
+      
+      // Extract markdown images: ![alt](url)
+      let match;
+      const mdImageRegex = /!\[(.*?)\]\((https?:\/\/[^\s)]+)\)/g;
+      while ((match = mdImageRegex.exec(textContent)) !== null) addImageUrl(match[2]);
+
+      // Raw URLs with image extensions
+      const rawRegex = /(https?:\/\/[^\s<>"'\)]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s<>"']*)?)/gi;
+      while ((match = rawRegex.exec(textContent)) !== null) addImageUrl(match[1]);
+
+      // Image service URLs
+      const svcRegex = /(https?:\/\/(?:unsplash\.com|picsum\.photos|imgur\.com|i\.imgur\.com|images\.unsplash\.com)\/[^\s<>"']+)/gi;
+      while ((match = svcRegex.exec(textContent)) !== null) addImageUrl(match[1]);
 
       if (imageUrls.length > 0) {
-        let cleanContent = fullText
+        let cleanContent = textContent
           .replace(/```json\n?/, "")
           .replace(/```\n?$/, "")
           .replace(/!\[(.*?)\]\([^)]+\)/g, "")
           .replace(/(https?:\/\/[^\s<>"']+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s<>"']*)?)/gi, "")
           .replace(/(https?:\/\/(?:unsplash\.com|picsum\.photos|imgur\.com|i\.imgur\.com|images\.unsplash\.com)\/[^\s<>"']+)/gi, "")
-          .replace(/^"[\s\S]*?"\s*:/, "")
-          .replace(/\}[\s\S]*$/, "}")
           .replace(/\\n/g, "\n")
           .replace(/\\"/g, '"')
           .replace(/\n{3,}/g, "\n\n")
