@@ -14,6 +14,7 @@ import "highlight.js/styles/github-dark.css";
 import SpeakButton from "./SpeakButton";
 import QuizCard from "./QuizCard";
 import StreamMarkdown from "./StreamMarkdown";
+import ImageGallery from "./ImageGallery";
 import { FileText, Image as ImageIcon, Copy, Check, Edit2, Loader2, RefreshCw } from "lucide-react";
 import { useState, useEffect, memo, useCallback } from "react";
 
@@ -152,9 +153,17 @@ const MessageBubble = memo(function MessageBubble({ message, language, aiVoice, 
                 </div>
               </div>
             ) : (
-              <div className={`font-body leading-relaxed text-sm ${isUser ? "user-markdown" : ""} ${message.isStreaming && !isUser ? "typing-cursor" : ""}`}>
-                <StreamMarkdown content={parsedContent} isStreaming={message.isStreaming && !isUser} />
-              </div>
+              <>
+                {(parsedContent || message.imageUrls?.length) && (
+                  <div className={`font-body leading-relaxed text-sm ${isUser ? "user-markdown" : ""} ${message.isStreaming && !isUser ? "typing-cursor" : ""}`}>
+                    {parsedContent && <StreamMarkdown content={parsedContent} isStreaming={message.isStreaming && !isUser} />}
+                  </div>
+                )}
+                
+                {message.imageUrls && message.imageUrls.length > 0 && (
+                  <ImageGallery images={message.imageUrls} />
+                )}
+              </>
             )}
 
             {/* AI Action Bar & Translate Toggle Bottom Placed */}

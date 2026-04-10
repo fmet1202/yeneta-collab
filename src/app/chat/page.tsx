@@ -230,8 +230,51 @@ export default function ChatPage() {
       return;
     }
 
+    // Check if user wants an image
+    const imageKeywords = /draw|paint|create.image|generate.image|show.me.a|show.me.an|image of|picture of|illustrate|visualize|show me/i;
+    const wantsImage = imageKeywords.test(text);
+
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text, timestamp: Date.now(), type: "text" };
     const assistantId = (Date.now() + 1).toString();
+
+    if (wantsImage) {
+      // Handle image generation
+      setMessages(() => [...localHistory, userMsg, { id: assistantId, role: "assistant", content: language === "amharic" ? "ምስል እየፈጠርኩ ነው..." : "Generating image...", timestamp: Date.now(), type: "text", isStreaming: true } as Message]);
+      setIsTyping(true);
+
+      try {
+        const res = await fetch("/api/image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: text }),
+        });
+
+        const data = await res.json();
+
+        if (data.imageUrl) {
+          setMessages((prev) => prev.map((m) => 
+            m.id === assistantId 
+              ? { ...m, content: data.text || "", imageUrls: [data.imageUrl], isStreaming: false }
+              : m
+          ));
+        } else {
+          setMessages((prev) => prev.map((m) => 
+            m.id === assistantId 
+              ? { ...m, content: data.error || (language === "amharic" ? "ምስል መፍጠር አልተቻለም።" : "Could not generate image."), isStreaming: false }
+              : m
+          ));
+        }
+      } catch (error) {
+        setMessages((prev) => prev.map((m) => 
+          m.id === assistantId 
+            ? { ...m, content: language === "amharic" ? "ስህተት ተከስቷል።" : "An error occurred.", isStreaming: false }
+            : m
+        ));
+      } finally {
+        setIsTyping(false);
+      }
+      return;
+    }
 
     setMessages(() => [...localHistory, userMsg, { id: assistantId, role: "assistant", content: "", timestamp: Date.now(), type: "text", isStreaming: true } as Message]);
     setIsTyping(true);

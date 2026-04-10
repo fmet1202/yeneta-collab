@@ -5,6 +5,7 @@ export interface Message {
   timestamp: number;
   type: "text" | "image" | "document" | "quiz";
   fileName?: string;
+  imageUrls?: string[];
   isStreaming?: boolean;
   isTranslating?: boolean;
 }
